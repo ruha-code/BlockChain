@@ -1,0 +1,23 @@
+# Node (если вдруг используешь локально)
+
+node_modules/
+package-lock.json
+yarn.lock
+
+# Env (если будешь добавлять приватные ключи)
+
+.env
+
+# Remix artifacts (если экспортируешь)
+
+artifacts/
+cache/
+
+# OS мусор
+
+.DS_Store
+Thumbs.db
+
+# Logs
+
+*.log
