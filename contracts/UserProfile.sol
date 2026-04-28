@@ -1,0 +1,38 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract UserProfile {
+    struct User {
+        string username;
+        string email;
+        address account;
+    }
+
+    mapping(address => User) private users;
+
+    event UserRegistered(address account, string username, string email);
+
+    function registerUser(string memory _username, string memory _email) public {
+        require(bytes(users[msg.sender].username).length == 0, "User already registered");
+        require(bytes(_username).length > 0, "Username cannot be empty");
+        require(bytes(_email).length > 0, "Email cannot be empty");
+
+        users[msg.sender] = User({
+            username: _username,
+            email: _email,
+            account: msg.sender
+        });
+
+        emit UserRegistered(msg.sender, _username, _email);
+    }
+
+    function getUserInfo(address _account) public view returns (string memory, string memory, address) {
+        require(bytes(users[_account].username).length > 0, "User not found");
+        User memory user = users[_account];
+        return (user.username, user.email, user.account);
+    }
+
+    function isRegistered(address _account) public view returns (bool) {
+        return bytes(users[_account].username).length > 0;
+    }
+}
