@@ -3,8 +3,9 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract GymCoin is ERC20, Ownable {
+contract GymCoin is ERC20, Ownable, ReentrancyGuard {
     uint256 public sellRate;
     uint256 public buyRate;
 
@@ -22,7 +23,7 @@ contract GymCoin is ERC20, Ownable {
         buyRate = _buyRate;
     }
 
-    function buy(uint256 gcAmount) public payable {
+    function buy(uint256 gcAmount) public payable nonReentrant {
         require(gcAmount > 0, "Amount must be greater than 0");
 
         uint256 requiredEth = (gcAmount * sellRate) / (10 ** decimals());
@@ -31,7 +32,7 @@ contract GymCoin is ERC20, Ownable {
         uint256 ownerBalance = balanceOf(owner());
         require(ownerBalance >= gcAmount, "Owner has insufficient tokens");
 
-        _transfer(owner(), msg.sender, gcAmount);
+        _transfer(owner(), msg.sender, gcAmount * 10 ** decimals());
 
         uint256 excessEth = msg.value - requiredEth;
         if (excessEth > 0) {
@@ -42,14 +43,14 @@ contract GymCoin is ERC20, Ownable {
         emit TokensBought(msg.sender, gcAmount, requiredEth);
     }
 
-    function sell(uint256 gcAmount) public {
+    function sell(uint256 gcAmount) public nonReentrant {
         require(gcAmount > 0, "Amount must be greater than 0");
         require(balanceOf(msg.sender) >= gcAmount, "Insufficient token balance");
 
         uint256 ethAmount = (gcAmount * buyRate) / (10 ** decimals());
         require(address(this).balance >= ethAmount, "Contract has insufficient ETH");
 
-        _transfer(msg.sender, owner(), gcAmount);
+        _transfer(msg.sender, owner(), gcAmount * 10 ** decimals());
 
         (bool sent, ) = msg.sender.call{value: ethAmount}("");
         require(sent, "Failed to send ETH");

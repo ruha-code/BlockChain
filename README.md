@@ -41,8 +41,8 @@ A decentralized credit system for a network of gyms, built on the Ethereum block
 
 The frontend is already configured to connect to the deployed contracts on **Sepolia Testnet**.
 
-- **GymCoin Address**: `0x14edb910e383fa5d862fd4eac50c296537f4f7bf`
-- **UserProfile Address**: `0x1749Cc96376B84890bCC4BB327Faf976E212a1B4`
+- **GymCoin Address**: `0x969ACbDaA87BeF8DA6eD2a071a593c93eBf2d5c4`
+- **UserProfile Address**: `0x442B63C25Aa9feC42a0FCD2dBb7eB1E845273Ee2`
 
 ## How to Use
 
