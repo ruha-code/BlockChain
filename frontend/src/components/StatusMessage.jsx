@@ -2,7 +2,7 @@ export default function StatusMessage({ message }) {
   if (!message) return null;
   const isError = message.type === "error";
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-6 text-sm font-medium border ${
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-6 text-sm font-semibold border animate-slide-right ${
       isError
         ? "bg-red-50 border-red-200 text-red-700"
         : "bg-emerald-50 border-emerald-200 text-emerald-700"

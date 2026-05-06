@@ -1,10 +1,86 @@
 @import "tailwindcss";
 
+/* ─── Base ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
 body {
-  background: #FAFAF8;
+  background: #F7F7F5;
   color: #111827;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'cv11', 'ss01';
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-* { box-sizing: border-box; }
+/* ─── Scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
+
+/* ─── Animations ────────────────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes slide-right {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes spin-ring {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: -226; }
+}
+@keyframes check-draw {
+  from { stroke-dashoffset: 48; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes pulse-ring {
+  0%   { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.animate-fade-up    { animation: fade-up  0.35s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-fade-in    { animation: fade-in  0.25s ease both; }
+.animate-scale-in   { animation: scale-in 0.3s  cubic-bezier(0.16,1,0.3,1) both; }
+.animate-slide-right{ animation: slide-right 0.3s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* stagger helpers */
+.delay-50  { animation-delay: 50ms; }
+.delay-100 { animation-delay: 100ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-250 { animation-delay: 250ms; }
+.delay-300 { animation-delay: 300ms; }
+
+/* ─── Focus ring ────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ─── Selection ─────────────────────────────────────────── */
+::selection { background: #d1fae5; color: #065f46; }
+
+/* ─── Number input hide arrows ──────────────────────────── */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+/* ─── Transition defaults ───────────────────────────────── */
+button, a, input, select { transition-property: color, background-color, border-color, box-shadow, opacity, transform; transition-duration: 150ms; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* ─── Card glow on hover ────────────────────────────────── */
+.card-hover { transition: box-shadow 200ms ease, transform 200ms ease; }
+.card-hover:hover { box-shadow: 0 8px 24px -4px rgba(0,0,0,0.08); transform: translateY(-1px); }

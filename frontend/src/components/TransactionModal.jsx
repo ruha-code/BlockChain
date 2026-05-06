@@ -11,7 +11,7 @@ export default function TransactionModal({ modal, onClose, onDashboard }) {
       <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={modal.type === "success" ? onClose : undefined} />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl border border-gray-100 shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div className="relative bg-white rounded-2xl border border-gray-100 shadow-2xl w-full max-w-md mx-4 overflow-hidden animate-scale-in">
         {modal.type === "loading" ? (
           <LoadingState modal={modal} />
         ) : (

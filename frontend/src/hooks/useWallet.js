@@ -35,6 +35,7 @@ export function useWallet() {
   const [txHistory, setTxHistory] = useState([]);
   const [txCount, setTxCount] = useState(0);
   const [loadingAction, setLoadingAction] = useState(null);
+  const [connecting, setConnecting] = useState(false);
   const [message, setMessage] = useState(null);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [modal, setModal] = useState(null); // { type: 'loading'|'success', txHash, amount, action }
@@ -180,6 +181,7 @@ export function useWallet() {
         showMessage("MetaMask not installed", "error");
         return;
       }
+      setConnecting(true);
       await switchToSepolia();
       const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
       const addr = accounts[0];
@@ -221,6 +223,8 @@ export function useWallet() {
       showMessage("Wallet connected successfully");
     } catch (err) {
       showMessage("Connection failed: " + formatError(err), "error");
+    } finally {
+      setConnecting(false);
     }
   };
 
@@ -338,7 +342,7 @@ export function useWallet() {
   return {
     account, balance, ethBalance, username, email,
     isRegistered, isOwner, rates, txHistory, txCount,
-    loadingAction, message, modal, closeModal,
+    connecting, loadingAction, message, modal, closeModal,
     activeTab, setActiveTab,
     connectWallet, disconnectWallet,
     buyTokens, sellTokens, transferTokens,

@@ -9,7 +9,7 @@ export default function TreasuryTab({ balance, ethBalance, txHistory, rates }) {
   const recentActivity = txHistory.slice(0, 8);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 animate-fade-up">
       {/* Header */}
       <div className="bg-gradient-to-br from-blue-900 to-blue-800 rounded-2xl p-7 text-white relative overflow-hidden">
         <div className="absolute right-0 top-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/4 translate-x-1/4" />
@@ -33,7 +33,7 @@ export default function TreasuryTab({ balance, ethBalance, txHistory, rates }) {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 gap-4 delay-50">
         {[
           {
             label: "Buy Rate",

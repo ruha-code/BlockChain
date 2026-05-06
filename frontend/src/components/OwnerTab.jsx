@@ -24,7 +24,7 @@ export default function OwnerTab({ rates, isOwner, onUpdateRates, loading }) {
   const isValid = parseFloat(newSell) > 0 && parseFloat(newBuy) > 0;
 
   return (
-    <div className="max-w-2xl space-y-5">
+    <div className="max-w-2xl space-y-5 animate-fade-up">
       {/* Admin badge */}
       <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
         <div className="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -106,7 +106,7 @@ export default function OwnerTab({ rates, isOwner, onUpdateRates, loading }) {
         <button
           onClick={() => isValid && onUpdateRates(newSell, newBuy)}
           disabled={loading || !isValid}
-          className="px-6 py-2.5 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-100 disabled:cursor-not-allowed text-white disabled:text-gray-400 rounded-xl text-sm font-semibold transition-all flex items-center gap-2"
+          className="px-6 py-3 bg-gray-900 hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-sm hover:-translate-y-px active:translate-y-0"
         >
           {loading ? <><Spinner /> Updating...</> : "Update Rates"}
         </button>

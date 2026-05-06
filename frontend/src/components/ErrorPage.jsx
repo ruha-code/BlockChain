@@ -1,6 +1,6 @@
 export default function ErrorPage({ onBack }) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-8">
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-8 animate-fade-up">
       {/* Dumbbell illustration */}
       <div className="relative mb-10">
         <div className="w-36 h-36 bg-gray-100 rounded-full flex items-center justify-center">

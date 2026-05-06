@@ -19,10 +19,14 @@ const KNOWN_TABS = ["dashboard", "buy", "sell", "transfer", "transactions", "pro
 export default function App() {
   const wallet = useWallet();
 
-  if (!wallet.account) {
+  if (!wallet.account || !wallet.isRegistered) {
     return (
       <ConnectScreen
         onConnect={wallet.connectWallet}
+        onRegister={wallet.registerUser}
+        account={wallet.account}
+        connecting={wallet.connecting}
+        loadingAction={wallet.loadingAction}
         message={wallet.message?.type === "error" ? wallet.message : null}
       />
     );
@@ -48,6 +52,7 @@ export default function App() {
             rates={wallet.rates}
             loadingAction={wallet.loadingAction}
             onRegister={wallet.registerUser}
+            setActiveTab={wallet.setActiveTab}
           />
         );
       case "buy":
@@ -55,6 +60,7 @@ export default function App() {
           <BuyTab
             rates={wallet.rates}
             balance={wallet.balance}
+            ethBalance={wallet.ethBalance}
             onBuy={wallet.buyTokens}
             loading={wallet.loadingAction === "buy"}
           />
@@ -64,6 +70,7 @@ export default function App() {
           <SellTab
             rates={wallet.rates}
             balance={wallet.balance}
+            ethBalance={wallet.ethBalance}
             onSell={wallet.sellTokens}
             loading={wallet.loadingAction === "sell"}
           />
@@ -124,6 +131,8 @@ export default function App() {
         isOwner={wallet.isOwner}
         onDisconnect={wallet.disconnectWallet}
         txCount={wallet.txCount}
+        username={wallet.username}
+        isRegistered={wallet.isRegistered}
       />
 
       <main className="flex-1 flex flex-col ml-[240px] min-h-screen">
