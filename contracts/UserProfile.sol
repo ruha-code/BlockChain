@@ -10,12 +10,13 @@ contract UserProfile {
 
     mapping(address => User) private users;
 
-    event UserRegistered(address account, string username, string email);
+    event UserRegistered(address indexed account, string username, string email);
+    event UserUpdated(address indexed account, string username, string email);
 
     function registerUser(string memory _username, string memory _email) public {
         require(bytes(users[msg.sender].username).length == 0, "User already registered");
-        require(bytes(_username).length > 0, "Username cannot be empty");
-        require(bytes(_email).length > 0, "Email cannot be empty");
+        require(bytes(_username).length > 0 && bytes(_username).length <= 32, "Username must be 1-32 chars");
+        require(bytes(_email).length > 0 && bytes(_email).length <= 64, "Email must be 1-64 chars");
 
         users[msg.sender] = User({
             username: _username,
@@ -24,6 +25,17 @@ contract UserProfile {
         });
 
         emit UserRegistered(msg.sender, _username, _email);
+    }
+
+    function updateUser(string memory _username, string memory _email) public {
+        require(bytes(users[msg.sender].username).length > 0, "User not registered");
+        require(bytes(_username).length > 0 && bytes(_username).length <= 32, "Username must be 1-32 chars");
+        require(bytes(_email).length > 0 && bytes(_email).length <= 64, "Email must be 1-64 chars");
+
+        users[msg.sender].username = _username;
+        users[msg.sender].email = _email;
+
+        emit UserUpdated(msg.sender, _username, _email);
     }
 
     function getUserInfo(address _account) public view returns (string memory, string memory, address) {

@@ -6,11 +6,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 contract GymCoin is ERC20, Ownable, ReentrancyGuard {
-    uint256 public sellRate;
+    uint256 public sellRate; // ETH per GC (18 decimals precision)
     uint256 public buyRate;
 
-    event TokensBought(address buyer, uint256 gcAmount, uint256 ethAmount);
-    event TokensSold(address seller, uint256 gcAmount, uint256 ethAmount);
+    event TokensBought(address indexed buyer, uint256 gcAmount, uint256 ethAmount);
+    event TokensSold(address indexed seller, uint256 gcAmount, uint256 ethAmount);
     event RatesUpdated(uint256 newSellRate, uint256 newBuyRate);
 
     constructor(
@@ -25,14 +25,12 @@ contract GymCoin is ERC20, Ownable, ReentrancyGuard {
 
     function buy(uint256 gcAmount) public payable nonReentrant {
         require(gcAmount > 0, "Amount must be greater than 0");
-
+        uint256 gcWei = gcAmount * 10 ** decimals();
         uint256 requiredEth = (gcAmount * sellRate) / (10 ** decimals());
         require(msg.value >= requiredEth, "Insufficient ETH sent");
+        require(balanceOf(owner()) >= gcWei, "Owner has insufficient tokens");
 
-        uint256 ownerBalance = balanceOf(owner());
-        require(ownerBalance >= gcAmount, "Owner has insufficient tokens");
-
-        _transfer(owner(), msg.sender, gcAmount * 10 ** decimals());
+        _transfer(owner(), msg.sender, gcWei);
 
         uint256 excessEth = msg.value - requiredEth;
         if (excessEth > 0) {
@@ -45,12 +43,13 @@ contract GymCoin is ERC20, Ownable, ReentrancyGuard {
 
     function sell(uint256 gcAmount) public nonReentrant {
         require(gcAmount > 0, "Amount must be greater than 0");
-        require(balanceOf(msg.sender) >= gcAmount, "Insufficient token balance");
+        uint256 gcWei = gcAmount * 10 ** decimals();
+        require(balanceOf(msg.sender) >= gcWei, "Insufficient token balance");
 
         uint256 ethAmount = (gcAmount * buyRate) / (10 ** decimals());
         require(address(this).balance >= ethAmount, "Contract has insufficient ETH");
 
-        _transfer(msg.sender, owner(), gcAmount * 10 ** decimals());
+        _transfer(msg.sender, owner(), gcWei);
 
         (bool sent, ) = msg.sender.call{value: ethAmount}("");
         require(sent, "Failed to send ETH");
@@ -66,10 +65,11 @@ contract GymCoin is ERC20, Ownable, ReentrancyGuard {
         emit RatesUpdated(_sellRate, _buyRate);
     }
 
-    function transfer(address to, uint256 gcAmount) public override returns (bool) {
-        require(gcAmount > 0, "Amount must be greater than 0");
-        require(balanceOf(msg.sender) >= gcAmount, "Insufficient balance");
-        return super.transfer(to, gcAmount);
+    function withdraw() public onlyOwner {
+        uint256 balance = address(this).balance;
+        require(balance > 0, "No ETH to withdraw");
+        (bool sent, ) = owner().call{value: balance}("");
+        require(sent, "Withdraw failed");
     }
 
     receive() external payable {}
