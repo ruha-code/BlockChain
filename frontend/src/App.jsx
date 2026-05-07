@@ -154,6 +154,8 @@ export default function App() {
             onBlacklist={wallet.blacklistAddr}
             onUnblacklist={wallet.unblacklistAddr}
             onUpdateMembership={wallet.updateMembershipConfig}
+            onWithdraw={wallet.withdrawEth}
+            contractEthBalance={wallet.contractEthBalance}
             loading={wallet.loadingAction}
           />
         );

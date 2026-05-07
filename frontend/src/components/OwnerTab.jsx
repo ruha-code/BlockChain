@@ -28,6 +28,7 @@ export default function OwnerTab({
   onPause, onUnpause,
   onBlacklist, onUnblacklist,
   onUpdateMembership,
+  onWithdraw, contractEthBalance,
   loading,
 }) {
   const [newSell,    setNewSell]    = useState("");
@@ -189,6 +190,29 @@ export default function OwnerTab({
         >
           {loading === "membership" ? <><Spinner /> Updating...</> : "Update Membership"}
         </button>
+      </Section>
+
+      {/* ── WITHDRAW ── */}
+      <Section title="Withdraw ETH" desc="Withdraw accumulated ETH from the contract to your admin wallet">
+        <div className="flex items-center gap-4 p-4 bg-gray-50 border border-gray-100 rounded-xl mb-4">
+          <div className="flex-1">
+            <p className="text-xs text-gray-500 mb-0.5">Contract ETH Balance</p>
+            <p className="text-2xl font-extrabold text-gray-900">{contractEthBalance ?? "0"} <span className="text-sm font-normal text-gray-400">ETH</span></p>
+          </div>
+          <button
+            onClick={onWithdraw}
+            disabled={loading === "withdraw" || parseFloat(contractEthBalance ?? 0) === 0}
+            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-sm hover:-translate-y-px active:translate-y-0"
+          >
+            {loading === "withdraw" ? <><Spinner /> Withdrawing...</> : "⬇ Withdraw All ETH"}
+          </button>
+        </div>
+        <div className="flex items-start gap-2.5 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <p className="text-xs text-blue-700">ETH accumulates in the contract when users <strong>buy GC tokens</strong>. Withdraw sends all ETH to your admin wallet.</p>
+        </div>
       </Section>
 
       {/* ── BLACKLIST ── */}

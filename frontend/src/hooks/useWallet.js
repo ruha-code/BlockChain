@@ -462,6 +462,18 @@ export function useWallet() {
     finally { setLoadingAction(null); }
   };
 
+  // ── Admin: withdraw ETH ───────────────────────────────────────────────────────
+  const withdrawEth = async () => {
+    try {
+      setLoadingAction("withdraw");
+      const tx = await gymCoin.withdraw();
+      await tx.wait();
+      await refreshBalance(gymCoin, account, provider);
+      showMessage("ETH withdrawn to admin wallet!");
+    } catch (err) { showMessage("Withdraw failed: " + formatError(err), "error"); }
+    finally { setLoadingAction(null); }
+  };
+
   // ── Admin: roles ──────────────────────────────────────────────────────────────
   const grantRole = async (roleHash, addr) => {
     try {
@@ -523,6 +535,7 @@ export function useWallet() {
     pauseContract, unpauseContract,
     blacklistAddr, unblacklistAddr,
     updateMembershipConfig, buyMembership,
+    withdrawEth,
     grantRole, revokeRole,
     loadLeaderboard, loadRatesHistory,
   };
