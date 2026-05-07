@@ -59,8 +59,9 @@ export function useWallet() {
   const [membershipConfig, setMembershipConfig]     = useState({ price: "0", duration: "0" });
 
   // ── Transactions ─────────────────────────────────────────────────────────────
-  const [txHistory, setTxHistory]   = useState([]);
-  const [txCount, setTxCount]       = useState(0);
+  const [txHistory, setTxHistory]       = useState([]);
+  const [txCount, setTxCount]           = useState(0);
+  const [allTxHistory, setAllTxHistory] = useState([]);
 
   // ── UI state ─────────────────────────────────────────────────────────────────
   const [loadingAction, setLoadingAction] = useState(null);
@@ -180,6 +181,31 @@ export function useWallet() {
     } catch { return []; }
   };
 
+  // ── All-users transaction history (admin view) ───────────────────────────────
+  const loadAllTransactions = async (gc, prov) => {
+    try {
+      const [bought, sold] = await Promise.all([
+        gc.queryFilter(gc.filters.TokensBought()),
+        gc.queryFilter(gc.filters.TokensSold()),
+      ]);
+      const allEvents = [...bought, ...sold];
+      const blockNums = [...new Set(allEvents.map((e) => e.blockNumber))];
+      const blocks = await Promise.all(blockNums.map((n) => prov.getBlock(n)));
+      const blockTs = {};
+      blocks.forEach((b) => { if (b) blockTs[b.number] = b.timestamp; });
+      const fmtTs = (blockNum) => blockTs[blockNum] ? new Date(blockTs[blockNum] * 1000).toLocaleString() : "—";
+      const history = [];
+      for (const ev of bought) {
+        history.push({ type: "buy", buyer: ev.args.buyer, gcAmount: ev.args.gcAmount.toString(), ethAmount: ethers.formatEther(ev.args.ethAmount), block: ev.blockNumber, txHash: ev.transactionHash, timestamp: fmtTs(ev.blockNumber) });
+      }
+      for (const ev of sold) {
+        history.push({ type: "sell", seller: ev.args.seller, gcAmount: ev.args.gcAmount.toString(), ethAmount: ethers.formatEther(ev.args.ethAmount), block: ev.blockNumber, txHash: ev.transactionHash, timestamp: fmtTs(ev.blockNumber) });
+      }
+      history.sort((a, b) => b.block - a.block);
+      return history;
+    } catch { return []; }
+  };
+
   // ── GC Rates history loader ───────────────────────────────────────────────────
   const loadRatesHistory = useCallback(async () => {
     if (!gymCoin || !provider) return [];
@@ -283,6 +309,8 @@ export function useWallet() {
       const history = await loadTransactionHistory(gc, addr, prov);
       setTxHistory(history);
       setTxCount(history.length);
+      const allHistory = await loadAllTransactions(gc, prov);
+      setAllTxHistory(allHistory);
       showMessage("Wallet connected successfully");
     } catch (err) {
       showMessage("Connection failed: " + formatError(err), "error");
@@ -302,7 +330,7 @@ export function useWallet() {
     setLimits({ maxBuy: "0", maxSell: "0" });
     setMembershipConfig({ price: "0", duration: "0" });
     setMembershipExpiry("0"); setIsMember(false); setIsPaused(false);
-    setTxHistory([]); setTxCount(0);
+    setTxHistory([]); setTxCount(0); setAllTxHistory([]);
     setActiveTab("dashboard");
   };
 
@@ -523,7 +551,7 @@ export function useWallet() {
     isRegistered, isOwner,
     rates, limits, isPaused,
     isMember, membershipExpiry, membershipConfig,
-    txHistory, txCount,
+    txHistory, txCount, allTxHistory,
     connecting, loadingAction, message, modal,
     activeTab,
     // actions

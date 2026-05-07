@@ -1,12 +1,18 @@
 import { SEPOLIA_EXPLORER, GYM_COIN_ADDRESS } from "../constants";
 
-export default function TreasuryTab({ balance, ethBalance, txHistory, rates }) {
-  const totalBought = txHistory.filter((t) => t.type === "buy").reduce((s, t) => s + parseFloat(t.ethAmount), 0);
-  const totalSold = txHistory.filter((t) => t.type === "sell").reduce((s, t) => s + parseFloat(t.ethAmount), 0);
-  const buyCount = txHistory.filter((t) => t.type === "buy").length;
-  const sellCount = txHistory.filter((t) => t.type === "sell").length;
+const shortAddr = (addr) => addr ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : "—";
 
-  const recentActivity = txHistory.slice(0, 8);
+export default function TreasuryTab({ balance, ethBalance, txHistory, allTxHistory = [], rates }) {
+  // Global stats from all users' buy/sell events
+  const totalBought = allTxHistory.filter((t) => t.type === "buy").reduce((s, t) => s + parseFloat(t.ethAmount), 0);
+  const totalSold   = allTxHistory.filter((t) => t.type === "sell").reduce((s, t) => s + parseFloat(t.ethAmount), 0);
+  const buyCount    = allTxHistory.filter((t) => t.type === "buy").length;
+  const sellCount   = allTxHistory.filter((t) => t.type === "sell").length;
+
+  // My personal tx count
+  const myTxCount = txHistory.length;
+
+  const recentActivity = allTxHistory.slice(0, 12);
 
   return (
     <div className="space-y-5 animate-fade-up">
@@ -15,13 +21,14 @@ export default function TreasuryTab({ balance, ethBalance, txHistory, rates }) {
         <div className="absolute right-0 top-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/4 translate-x-1/4" />
         <div className="flex items-center gap-2 mb-4">
           <span className="text-xs font-semibold bg-white/20 px-3 py-1 rounded-full">Treasury Overview</span>
+          <span className="text-xs font-semibold bg-white/10 px-3 py-1 rounded-full">All Users</span>
         </div>
         <div className="grid grid-cols-4 gap-6 relative">
           {[
             { label: "Contract Balance", value: `${parseFloat(balance).toFixed(2)} GC`, sub: "Owner holdings" },
             { label: "ETH Treasury", value: `${ethBalance} ETH`, sub: "Available liquidity" },
-            { label: "Buy Volume", value: `${totalBought.toFixed(4)} ETH`, sub: `${buyCount} purchases` },
-            { label: "Sell Volume", value: `${totalSold.toFixed(4)} ETH`, sub: `${sellCount} sales` },
+            { label: "Buy Volume", value: `${totalBought.toFixed(4)} ETH`, sub: `${buyCount} purchases (all users)` },
+            { label: "Sell Volume", value: `${totalSold.toFixed(4)} ETH`, sub: `${sellCount} sales (all users)` },
           ].map(({ label, value, sub }) => (
             <div key={label}>
               <p className="text-blue-200 text-xs mb-1">{label}</p>
@@ -50,9 +57,9 @@ export default function TreasuryTab({ balance, ethBalance, txHistory, rates }) {
             color: { bg: "bg-red-50", border: "border-red-100", stroke: "#dc2626", text: "text-red-700" },
           },
           {
-            label: "Total Transactions",
-            value: txHistory.length,
-            sub: "all time",
+            label: "Global Transactions",
+            value: allTxHistory.length,
+            sub: "across all users",
             icon: <><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /></>,
             color: { bg: "bg-blue-50", border: "border-blue-100", stroke: "#1d4ed8", text: "text-blue-700" },
           },
@@ -78,10 +85,13 @@ export default function TreasuryTab({ balance, ethBalance, txHistory, rates }) {
       </div>
 
       <div className="grid grid-cols-3 gap-5">
-        {/* Activity table */}
+        {/* Activity table — all users */}
         <div className="col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-6 py-5 border-b border-gray-50 flex justify-between items-center">
-            <h3 className="text-sm font-semibold text-gray-900">Treasury Activity</h3>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">All Users Activity</h3>
+              <p className="text-xs text-gray-400 mt-0.5">Buy &amp; Sell events across the platform</p>
+            </div>
             <a
               href={`${SEPOLIA_EXPLORER}/address/${GYM_COIN_ADDRESS}`}
               target="_blank"
@@ -101,25 +111,36 @@ export default function TreasuryTab({ balance, ethBalance, txHistory, rates }) {
               {recentActivity.map((tx, i) => (
                 <div key={i} className="flex items-center gap-4 px-6 py-3.5 hover:bg-gray-50/50 transition-colors">
                   <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    tx.type === "buy" ? "bg-emerald-50" : tx.type === "sell" ? "bg-red-50" : "bg-blue-50"
+                    tx.type === "buy" ? "bg-emerald-50" : "bg-red-50"
                   }`}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                      stroke={tx.type === "buy" ? "#059669" : tx.type === "sell" ? "#dc2626" : "#1d4ed8"}
+                      stroke={tx.type === "buy" ? "#059669" : "#dc2626"}
                       strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      {tx.type === "buy" ? <path d="M12 5v14M5 12l7 7 7-7" /> :
-                       tx.type === "sell" ? <path d="M12 19V5M5 12l7-7 7 7" /> :
-                       <path d="M5 12h14M14 6l6 6-6 6" />}
+                      {tx.type === "buy"
+                        ? <path d="M12 5v14M5 12l7 7 7-7" />
+                        : <path d="M12 19V5M5 12l7-7 7 7" />}
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-700 capitalize">{tx.type} · {parseFloat(tx.gcAmount).toFixed(2)} GC</p>
+                    <p className="text-sm font-medium text-gray-700 capitalize">
+                      {tx.type} · {parseFloat(tx.gcAmount).toFixed(0)} GC
+                      <span className="ml-2 text-xs font-mono text-gray-400">
+                        {tx.type === "buy" ? shortAddr(tx.buyer) : shortAddr(tx.seller)}
+                      </span>
+                    </p>
                     <p className="text-xs text-gray-400">{tx.timestamp}</p>
                   </div>
-                  {(tx.type === "buy" || tx.type === "sell") && (
-                    <span className={`text-sm font-bold ${tx.type === "buy" ? "text-emerald-600" : "text-red-500"}`}>
-                      {tx.type === "buy" ? "+" : "-"}{parseFloat(tx.ethAmount).toFixed(5)} ETH
-                    </span>
-                  )}
+                  <a
+                    href={`${SEPOLIA_EXPLORER}/tx/${tx.txHash}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-blue-500 hover:text-blue-700 font-mono"
+                  >
+                    {tx.txHash.slice(0, 8)}…
+                  </a>
+                  <span className={`text-sm font-bold ${tx.type === "buy" ? "text-emerald-600" : "text-red-500"}`}>
+                    {tx.type === "buy" ? "+" : "-"}{parseFloat(tx.ethAmount).toFixed(5)} ETH
+                  </span>
                 </div>
               ))}
             </div>
@@ -129,12 +150,12 @@ export default function TreasuryTab({ balance, ethBalance, txHistory, rates }) {
         {/* Statistics */}
         <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Statistics</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Platform Statistics</p>
             <div className="space-y-4">
               {[
-                { label: "Buy Transactions", value: buyCount, pct: txHistory.length ? Math.round(buyCount / txHistory.length * 100) : 0, color: "bg-emerald-500" },
-                { label: "Sell Transactions", value: sellCount, pct: txHistory.length ? Math.round(sellCount / txHistory.length * 100) : 0, color: "bg-red-400" },
-                { label: "Transfers", value: txHistory.filter(t => t.type === "transfer").length, pct: txHistory.length ? Math.round(txHistory.filter(t => t.type === "transfer").length / txHistory.length * 100) : 0, color: "bg-blue-500" },
+                { label: "Buy Transactions", value: buyCount, pct: allTxHistory.length ? Math.round(buyCount / allTxHistory.length * 100) : 0, color: "bg-emerald-500" },
+                { label: "Sell Transactions", value: sellCount, pct: allTxHistory.length ? Math.round(sellCount / allTxHistory.length * 100) : 0, color: "bg-red-400" },
+                { label: "My Transactions", value: myTxCount, pct: allTxHistory.length ? Math.min(100, Math.round(myTxCount / allTxHistory.length * 100)) : 0, color: "bg-blue-500" },
               ].map(({ label, value, pct, color }) => (
                 <div key={label}>
                   <div className="flex justify-between mb-1.5">

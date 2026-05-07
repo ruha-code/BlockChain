@@ -116,6 +116,7 @@ export default function App() {
             balance={wallet.balance}
             ethBalance={wallet.contractEthBalance}
             txHistory={wallet.txHistory}
+            allTxHistory={wallet.allTxHistory}
             rates={wallet.rates}
           />
         );
