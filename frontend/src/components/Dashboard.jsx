@@ -30,10 +30,10 @@ const TYPE_AMOUNT = { buy: true, sell: false, transfer: false, received: true };
 function shortAddr(a) { return a ? `${a.slice(0, 6)}…${a.slice(-4)}` : ""; }
 
 const ACTIONS = [
-  { id: "buy",          label: "Buy GC",       sub: "Exchange ETH for GC",      color: "emerald", icon: <path d="M12 5v14M5 12l7 7 7-7" /> },
-  { id: "sell",         label: "Sell GC",       sub: "Exchange GC for ETH",      color: "red",     icon: <path d="M12 19V5M5 12l7-7 7 7" /> },
-  { id: "transfer",     label: "Transfer",      sub: "Send GC to another wallet",color: "blue",    icon: <path d="M5 12h14M14 6l6 6-6 6" /> },
-  { id: "membership",   label: "Membership",    sub: "Activate gym membership",  color: "violet",  icon: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /> },
+  { id: "buy",      label: "Buy GC",    sub: "Exchange ETH for GC",       color: "emerald", icon: <path d="M12 5v14M5 12l7 7 7-7" /> },
+  { id: "sell",     label: "Sell GC",   sub: "Exchange GC for ETH",       color: "red",     icon: <path d="M12 19V5M5 12l7-7 7 7" /> },
+  { id: "transfer", label: "Transfer",  sub: "Send GC to another wallet", color: "blue",    icon: <path d="M5 12h14M14 6l6 6-6 6" /> },
+  { id: "transactions", label: "History", sub: "View all transactions",   color: "violet",  icon: <><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></> },
 ];
 
 const ACTION_COLORS = {
@@ -49,7 +49,6 @@ const FEATURES = [
   { color: "violet",  label: "Built for Gyms",        sub: "Powering fitness communities with blockchain", icon: <><path d="M18 8h1a4 4 0 0 1 0 8h-1" /><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" /></> },
 ];
 
-// Compute balance history from txHistory (newest-first) + current balance
 function buildChartData(txHistory, currentBalance) {
   if (!txHistory || txHistory.length === 0) return [];
   let bal = parseFloat(currentBalance) || 0;
@@ -83,7 +82,7 @@ function BalanceChart({ txHistory, balance }) {
     return `${x},${y}`;
   });
   const polyline = pts.join(" ");
-  const area     = `0,${H} ${polyline} ${W},${H}`;
+  const area = `0,${H} ${polyline} ${W},${H}`;
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-20" preserveAspectRatio="none">
@@ -95,22 +94,14 @@ function BalanceChart({ txHistory, balance }) {
       </defs>
       <polygon points={area} fill="url(#chartGrad)" />
       <polyline points={polyline} fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      {/* Last dot */}
       <circle cx={W} cy={pts[pts.length - 1].split(",")[1]} r="3" fill="#059669" />
     </svg>
   );
 }
 
-function fmtExpiry(ts) {
-  const n = Number(ts);
-  if (!n) return null;
-  return new Date(n * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
-
 export default function Dashboard({
   account, balance, ethBalance, username,
   isRegistered, txHistory, txCount, rates, setActiveTab,
-  isMember, membershipExpiry, isPaused,
 }) {
   const recent = txHistory.slice(0, 6);
   const { price: ethUSD, change: ethChange } = useEthPrice();
@@ -120,18 +111,7 @@ export default function Dashboard({
   return (
     <div className="space-y-5 animate-fade-up">
 
-      {/* ── Pause banner ── */}
-      {isPaused && (
-        <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-2xl">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-bold text-red-800">Contract is paused</p>
-            <p className="text-xs text-red-600">All buy / sell / transfer operations are currently disabled by the admin.</p>
-          </div>
-        </div>
-      )}
-
-      {/* ── Registration Banner ── */}
+      {/* Registration Banner */}
       {!isRegistered && (
         <div className="relative bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-5 overflow-hidden">
           <div className="absolute right-0 top-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4 pointer-events-none" />
@@ -153,7 +133,7 @@ export default function Dashboard({
         </div>
       )}
 
-      {/* ── Hero Banner ── */}
+      {/* Hero Banner */}
       <div className="relative bg-gradient-to-br from-emerald-600 via-emerald-600 to-emerald-700 rounded-2xl overflow-hidden">
         <div className="absolute right-0 top-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/3 translate-x-1/4 pointer-events-none" />
         <div className="absolute right-32 bottom-0 w-36 h-36 bg-white/5 rounded-full translate-y-1/2 pointer-events-none" />
@@ -168,7 +148,6 @@ export default function Dashboard({
               <HeroPill icon={<path d="M12 5v14M5 12l7 7 7-7" />} label="GC Balance" value={`${parseFloat(balance).toLocaleString(undefined, { maximumFractionDigits: 2 })} GC`} />
               <HeroPill icon={<><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" /><path d="M3 7v13h18v-5" /><path d="M18 12a2 2 0 0 0 0 4h4v-4z" /></>} label="ETH Balance" value={`${parseFloat(ethBalance || 0).toFixed(4)} ETH`} />
               <HeroPill icon={<><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /></>} label="Transactions" value={txCount} />
-              <HeroPill icon={<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />} label="Membership" value={isMember ? "PRO ✦" : "Inactive"} />
             </div>
           </div>
           <div className="flex-shrink-0 hidden lg:flex items-end self-end">
@@ -177,7 +156,7 @@ export default function Dashboard({
         </div>
       </div>
 
-      {/* ── Quick Actions ── */}
+      {/* Quick Actions */}
       <div className="grid grid-cols-4 gap-4">
         {ACTIONS.map(({ id, label, sub, color, icon }) => {
           const c = ACTION_COLORS[color];
@@ -196,7 +175,7 @@ export default function Dashboard({
         })}
       </div>
 
-      {/* ── Main grid ── */}
+      {/* Main grid */}
       <div className="grid grid-cols-3 gap-5">
 
         {/* Left: Activity + chart */}
@@ -288,31 +267,6 @@ export default function Dashboard({
         {/* Right widgets */}
         <div className="space-y-4">
 
-          {/* Membership card */}
-          <div
-            onClick={() => setActiveTab("membership")}
-            className={`rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-md ${isMember ? "bg-gradient-to-br from-violet-600 to-violet-800" : "bg-white border border-gray-100 shadow-sm"}`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <p className={`text-xs font-bold uppercase tracking-wider ${isMember ? "text-violet-200" : "text-gray-400"}`}>Membership</p>
-              {isMember && <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full">PRO</span>}
-            </div>
-            {isMember ? (
-              <>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                  <p className="text-white font-bold text-sm">Active Member</p>
-                </div>
-                <p className="text-violet-200 text-xs">Expires {fmtExpiry(membershipExpiry)}</p>
-              </>
-            ) : (
-              <>
-                <p className="text-gray-700 font-bold text-sm mb-1">Not a Member</p>
-                <p className="text-gray-400 text-xs">Tap to activate gym membership</p>
-              </>
-            )}
-          </div>
-
           {/* ETH Live Price */}
           <div
             onClick={() => setActiveTab("market")}
@@ -347,9 +301,7 @@ export default function Dashboard({
 
           {/* Contract Rates */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center gap-1.5 mb-4">
-              <p className="text-sm font-bold text-gray-900">Contract Rates</p>
-            </div>
+            <p className="text-sm font-bold text-gray-900 mb-4">Contract Rates</p>
             <div className="space-y-3">
               <RateCard label="Buy Rate" value={parseFloat(rates.sell).toFixed(4)} color="emerald" dir="down" />
               <RateCard label="Sell Rate" value={parseFloat(rates.buy).toFixed(4)} color="red" dir="up" />
@@ -381,8 +333,6 @@ export default function Dashboard({
     </div>
   );
 }
-
-/* ── Sub-components ── */
 
 function HeroPill({ icon, label, value }) {
   return (
