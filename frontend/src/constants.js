@@ -1,7 +1,8 @@
-export const GYM_COIN_ADDRESS     = "0x39d2035722ea88e5547076B6FCd83ce8f517d050";
-export const USER_PROFILE_ADDRESS = "0xa8a12f46E237F227A35f6DE65dd2d9dB5eEaFB10";
-export const SEPOLIA_CHAIN_ID     = "0xaa36a7";
-export const SEPOLIA_EXPLORER     = "https://sepolia.etherscan.io";
+export const GYM_COIN_ADDRESS = "0x3B3471C25b5553E8cddd38eeb69fA27a18bDEFB7";
+export const USER_PROFILE_ADDRESS =
+  "0x285748E39D17E3a268a9158A95d7E4B27bbeAc02";
+export const SEPOLIA_CHAIN_ID = "0xaa36a7";
+export const SEPOLIA_EXPLORER = "https://sepolia.etherscan.io";
 
 export const GYM_COIN_ABI = [
   // ERC-20 standard
