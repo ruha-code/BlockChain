@@ -34,7 +34,7 @@ const STEPS = [
   "Click Buy and confirm in MetaMask",
 ];
 
-export default function BuyTab({ rates, balance, ethBalance, onBuy, loading }) {
+export default function BuyTab({ rates, balance, ethBalance, limits, onBuy, loading }) {
   const [amount, setAmount] = useState("");
   const [selected, setSelected] = useState(null);
 
@@ -214,6 +214,9 @@ export default function BuyTab({ rates, balance, ethBalance, onBuy, loading }) {
               </svg>
               <span className="text-[11px] text-gray-400">Secure transaction via MetaMask</span>
             </div>
+            {limits?.maxBuy && limits.maxBuy !== "0" && (
+              <p className="text-[11px] text-gray-400 text-center">Max per transaction: <span className="font-semibold text-gray-600">{limits.maxBuy} GC</span></p>
+            )}
           </div>
         </div>
 

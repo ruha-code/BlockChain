@@ -136,8 +136,31 @@ function ProfileForm({ initialUsername = "", initialEmail = "", onSubmit, loadin
   );
 }
 
+function fmtExpiry(ts) {
+  const n = Number(ts);
+  if (!n) return null;
+  return new Date(n * 1000).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
+function QRCode({ address }) {
+  const url = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(address)}&bgcolor=ffffff&color=000000&margin=2`;
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <p className="text-sm font-bold text-gray-900 mb-1">Receive GC</p>
+      <p className="text-xs text-gray-400 mb-4">Scan this QR code to send GC to your wallet</p>
+      <div className="flex justify-center">
+        <div className="p-3 bg-white border border-gray-100 rounded-xl shadow-sm">
+          <img src={url} alt="QR Code" width={140} height={140} className="rounded-lg" />
+        </div>
+      </div>
+      <p className="text-[10px] text-gray-400 text-center mt-3 font-mono">{address.slice(0, 20)}…</p>
+    </div>
+  );
+}
+
 export default function ProfileTab({
   account, balance, username, email, isRegistered, txCount,
+  isMember, membershipExpiry,
   loadingAction, onRegister, onUpdate,
 }) {
   const [copied, setCopied] = useState(false);
@@ -207,10 +230,11 @@ export default function ProfileTab({
                 },
                 {
                   icon: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
-                  stroke: isRegistered ? "#059669" : "#9ca3af", bg: isRegistered ? "bg-emerald-50" : "bg-gray-50",
-                  value: isRegistered ? "Active" : "None",
+                  stroke: isMember ? "#7c3aed" : "#9ca3af", bg: isMember ? "bg-violet-50" : "bg-gray-50",
+                  value: isMember ? "PRO ✦" : "None",
                   label: "Membership", sub: "Status",
-                  green: isRegistered,
+                  green: isMember ? null : false,
+                  violet: isMember,
                 },
               ].map(({ icon, stroke, bg, value, label, sub, green }) => (
                 <div key={label} className="flex items-center gap-3 px-5 py-4 border-r border-gray-50 last:border-r-0">
@@ -221,7 +245,7 @@ export default function ProfileTab({
                   </div>
                   <div>
                     <p className="text-[10px] font-semibold text-gray-400 mb-0.5">{label}</p>
-                    <p className={`text-lg font-extrabold leading-none ${green === true ? "text-emerald-600" : green === false ? "text-amber-500" : "text-gray-900"}`}>
+                    <p className={`text-lg font-extrabold leading-none ${violet ? "text-violet-600" : green === true ? "text-emerald-600" : green === false ? "text-amber-500" : "text-gray-900"}`}>
                       {value}
                     </p>
                     <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>
@@ -325,6 +349,21 @@ export default function ProfileTab({
               </div>
             </div>
           </div>
+
+          {/* QR Code */}
+          <QRCode address={account} />
+
+          {/* Membership status */}
+          {isMember && (
+            <div className="bg-violet-50 border border-violet-100 rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
+                <p className="text-xs font-bold text-violet-700 uppercase tracking-wider">Active Member</p>
+              </div>
+              <p className="text-sm font-bold text-violet-900 mb-1">Gym Anywhere ✦ PRO</p>
+              <p className="text-xs text-violet-600">Expires {fmtExpiry(membershipExpiry)}</p>
+            </div>
+          )}
 
           {/* Your Benefits */}
           <div className="relative bg-emerald-50 border border-emerald-100 rounded-2xl p-5 overflow-hidden">

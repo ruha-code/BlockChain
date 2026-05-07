@@ -11,10 +11,16 @@ import TransactionsTab from "./components/TransactionsTab";
 import ProfileTab from "./components/ProfileTab";
 import OwnerTab from "./components/OwnerTab";
 import TreasuryTab from "./components/TreasuryTab";
+import MembershipTab from "./components/MembershipTab";
+import LeaderboardTab from "./components/LeaderboardTab";
+import MarketTab from "./components/MarketTab";
 import ErrorPage from "./components/ErrorPage";
 import TransactionModal from "./components/TransactionModal";
 
-const KNOWN_TABS = ["dashboard", "buy", "sell", "transfer", "transactions", "profile", "treasury", "owner"];
+const KNOWN_TABS = [
+  "dashboard", "buy", "sell", "transfer", "transactions",
+  "profile", "treasury", "owner", "membership", "leaderboard", "market",
+];
 
 export default function App() {
   const wallet = useWallet();
@@ -51,6 +57,9 @@ export default function App() {
             txCount={wallet.txCount}
             rates={wallet.rates}
             loadingAction={wallet.loadingAction}
+            isMember={wallet.isMember}
+            membershipExpiry={wallet.membershipExpiry}
+            isPaused={wallet.isPaused}
             onRegister={wallet.registerUser}
             setActiveTab={wallet.setActiveTab}
           />
@@ -61,6 +70,7 @@ export default function App() {
             rates={wallet.rates}
             balance={wallet.balance}
             ethBalance={wallet.ethBalance}
+            limits={wallet.limits}
             onBuy={wallet.buyTokens}
             loading={wallet.loadingAction === "buy"}
           />
@@ -71,6 +81,7 @@ export default function App() {
             rates={wallet.rates}
             balance={wallet.balance}
             ethBalance={wallet.ethBalance}
+            limits={wallet.limits}
             onSell={wallet.sellTokens}
             loading={wallet.loadingAction === "sell"}
           />
@@ -95,6 +106,8 @@ export default function App() {
             email={wallet.email}
             isRegistered={wallet.isRegistered}
             txCount={wallet.txCount}
+            isMember={wallet.isMember}
+            membershipExpiry={wallet.membershipExpiry}
             loadingAction={wallet.loadingAction}
             onRegister={wallet.registerUser}
             onUpdate={wallet.updateUser}
@@ -109,13 +122,47 @@ export default function App() {
             rates={wallet.rates}
           />
         );
+      case "membership":
+        return (
+          <MembershipTab
+            balance={wallet.balance}
+            isMember={wallet.isMember}
+            membershipExpiry={wallet.membershipExpiry}
+            membershipConfig={wallet.membershipConfig}
+            onBuyMembership={wallet.buyMembership}
+            loading={wallet.loadingAction === "membership"}
+          />
+        );
+      case "leaderboard":
+        return (
+          <LeaderboardTab
+            account={wallet.account}
+            loadLeaderboard={wallet.loadLeaderboard}
+          />
+        );
+      case "market":
+        return <MarketTab rates={wallet.rates} />;
       case "owner":
         return (
           <OwnerTab
             rates={wallet.rates}
+            limits={wallet.limits}
+            membershipConfig={wallet.membershipConfig}
+            isPaused={wallet.isPaused}
             isOwner={wallet.isOwner}
+            isPauser={wallet.isPauser}
+            isRateManager={wallet.isRateManager}
+            isBlacklistManager={wallet.isBlacklistManager}
             onUpdateRates={wallet.updateRates}
-            loading={wallet.loadingAction === "rates"}
+            onUpdateLimits={wallet.updateLimits}
+            onPause={wallet.pauseContract}
+            onUnpause={wallet.unpauseContract}
+            onBlacklist={wallet.blacklistAddr}
+            onUnblacklist={wallet.unblacklistAddr}
+            onUpdateMembership={wallet.updateMembershipConfig}
+            onGrantRole={wallet.grantRole}
+            onRevokeRole={wallet.revokeRole}
+            loading={wallet.loadingAction}
           />
         );
       default:
@@ -129,17 +176,23 @@ export default function App() {
         activeTab={wallet.activeTab}
         setActiveTab={wallet.setActiveTab}
         isOwner={wallet.isOwner}
+        isPauser={wallet.isPauser}
+        isRateManager={wallet.isRateManager}
+        isBlacklistManager={wallet.isBlacklistManager}
         onDisconnect={wallet.disconnectWallet}
         txCount={wallet.txCount}
         username={wallet.username}
         isRegistered={wallet.isRegistered}
+        isMember={wallet.isMember}
+        isPaused={wallet.isPaused}
       />
 
-      <main className="flex-1 flex flex-col ml-[240px] min-h-screen">
+      <main className="flex-1 flex flex-col ml-[220px] min-h-screen">
         <Header
           account={wallet.account}
           ethBalance={wallet.ethBalance}
           activeTab={wallet.activeTab}
+          isPaused={wallet.isPaused}
         />
         <div className="flex-1 p-8">
           <StatusMessage message={wallet.message} />
