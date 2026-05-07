@@ -34,7 +34,7 @@ async function fetchEthChart(days = 7) {
 }
 
 // ── SVG sparkline chart ───────────────────────────────────────────────────────
-function PriceChart({ data, color = "#059669" }) {
+function PriceChart({ data }) {
   if (!data || data.length < 2) return (
     <div className="h-32 flex items-center justify-center">
       <div className="w-6 h-6 border-2 border-gray-200 border-t-emerald-500 rounded-full animate-spin" />
@@ -77,7 +77,7 @@ function PriceChart({ data, color = "#059669" }) {
 }
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
-function StatCard({ label, value, sub, color = "gray", icon }) {
+function StatCard({ label, value, sub, color = "gray" }) {
   const colors = {
     emerald: { bg: "bg-emerald-50", border: "border-emerald-100", text: "text-emerald-700", sub: "text-emerald-500" },
     red:     { bg: "bg-red-50",     border: "border-red-100",     text: "text-red-600",     sub: "text-red-400"    },
@@ -213,14 +213,15 @@ export default function MarketTab({ rates, loadRatesHistory }) {
       setEthData(price);
       setChart(chartData);
       setLastUpdate(new Date());
-    } catch (e) {
+    } catch {
       setError("Failed to load market data from Binance. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { load(range); }, [range]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { load(range); }, [range]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-refresh every 60 seconds
   useEffect(() => {
@@ -228,16 +229,14 @@ export default function MarketTab({ rates, loadRatesHistory }) {
     return () => clearInterval(id);
   }, [range, load]);
 
-  // Load GC rate history from contract events
+  // Load GC rate history from contract events (gcLoading starts as true)
   useEffect(() => {
     if (!loadRatesHistory) return;
-    setGcLoading(true);
     loadRatesHistory().then((h) => { setGcHistory(h); setGcLoading(false); });
   }, [loadRatesHistory]);
 
   const ethUSD   = ethData?.usd ?? 0;
   const change24 = ethData?.usd_24h_change ?? null;
-  const mcap     = ethData?.usd_market_cap ?? 0;
   const vol24    = ethData?.usd_24h_vol ?? 0;
   const isUp     = (change24 ?? 0) >= 0;
 

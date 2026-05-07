@@ -88,7 +88,7 @@ export function useWallet() {
         const amt = parseFloat(ethers.formatUnits(value, decimals)).toFixed(2);
         showMessage(`💸 Received ${amt} GC from ${from.slice(0, 6)}…${from.slice(-4)}`);
         // Refresh balance in background
-        const [bal, ethBal] = await Promise.all([gymCoin.balanceOf(account), gymCoin.runner?.provider?.getBalance(account)]);
+        const [bal] = await Promise.all([gymCoin.balanceOf(account), gymCoin.runner?.provider?.getBalance(account)]);
         if (bal !== undefined) setBalance(ethers.formatUnits(bal, decimals));
       } catch { /* ignore */ }
     };

@@ -20,7 +20,7 @@ const FILTER_ACCENT = {
 
 function shortAddr(a) { return a ? `${a.slice(0, 6)}…${a.slice(-4)}` : ""; }
 
-export default function TransactionsTab({ txHistory, txCount }) {
+export default function TransactionsTab({ txHistory }) {
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
 

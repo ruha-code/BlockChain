@@ -171,7 +171,6 @@ export default function ProfileTab({
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const shortAddr = (a) => a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "";
 
   return (
     <div className="max-w-5xl animate-fade-up">

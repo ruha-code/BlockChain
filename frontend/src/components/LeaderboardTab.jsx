@@ -31,7 +31,8 @@ export default function LeaderboardTab({ account, loadLeaderboard }) {
     setLoading(false);
   };
 
-  useEffect(() => { loadData(); }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { loadData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRefresh = async () => {
     setRefreshed(true);

@@ -9,7 +9,7 @@ const STEPS = [
   "Click Sell and confirm in MetaMask",
 ];
 
-export default function SellTab({ rates, balance, ethBalance, limits, onSell, loading }) {
+export default function SellTab({ rates, balance, ethBalance, onSell, loading }) {
   const [amount, setAmount]   = useState("");
   const [selected, setSelected] = useState(null);
 
