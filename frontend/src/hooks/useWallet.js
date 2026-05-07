@@ -490,6 +490,22 @@ export function useWallet() {
     finally { setLoadingAction(null); }
   };
 
+  // ── Admin: fund contract with ETH ────────────────────────────────────────────
+  const fundContract = async (ethAmount) => {
+    try {
+      setLoadingAction("fund");
+      const signer = await provider.getSigner();
+      const tx = await signer.sendTransaction({
+        to: GYM_COIN_ADDRESS,
+        value: ethers.parseEther(ethAmount),
+      });
+      await tx.wait();
+      await refreshBalance(gymCoin, account, provider);
+      showMessage(`✅ Contract funded with ${ethAmount} ETH!`);
+    } catch (err) { showMessage("Fund failed: " + formatError(err), "error"); }
+    finally { setLoadingAction(null); }
+  };
+
   // ── Admin: withdraw ETH ───────────────────────────────────────────────────────
   const withdrawEth = async () => {
     try {
@@ -563,7 +579,7 @@ export function useWallet() {
     pauseContract, unpauseContract,
     blacklistAddr, unblacklistAddr,
     updateMembershipConfig, buyMembership,
-    withdrawEth,
+    fundContract, withdrawEth,
     grantRole, revokeRole,
     loadLeaderboard, loadRatesHistory,
   };

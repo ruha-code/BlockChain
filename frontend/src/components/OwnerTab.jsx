@@ -28,7 +28,7 @@ export default function OwnerTab({
   onPause, onUnpause,
   onBlacklist, onUnblacklist,
   onUpdateMembership,
-  onWithdraw, contractEthBalance,
+  onFund, onWithdraw, contractEthBalance,
   loading,
 }) {
   const [newSell,    setNewSell]    = useState("");
@@ -39,6 +39,7 @@ export default function OwnerTab({
   const [mDays,      setMDays]      = useState("");
   const [blAddr,     setBlAddr]     = useState("");
   const [unblAddr,   setUnblAddr]   = useState("");
+  const [fundAmt,    setFundAmt]    = useState("");
 
   if (!isOwner) {
     return (
@@ -190,6 +191,50 @@ export default function OwnerTab({
         >
           {loading === "membership" ? <><Spinner /> Updating...</> : "Update Membership"}
         </button>
+      </Section>
+
+      {/* ── FUND CONTRACT ── */}
+      <Section title="Fund Contract" desc="Send ETH to the contract so users can sell GC tokens">
+        <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-100 rounded-xl mb-4">
+          <div className="flex-1">
+            <p className="text-xs text-blue-600 mb-0.5">Contract ETH Balance</p>
+            <p className="text-2xl font-extrabold text-blue-800">{contractEthBalance ?? "0"} <span className="text-sm font-normal text-blue-400">ETH</span></p>
+            {parseFloat(contractEthBalance ?? 0) === 0 && (
+              <p className="text-xs text-red-500 font-medium mt-1">⚠️ Empty — users cannot sell GC right now</p>
+            )}
+          </div>
+        </div>
+        <div className="flex gap-3 mb-4">
+          {["0.01", "0.05", "0.1", "0.5"].map((n) => (
+            <button
+              key={n}
+              onClick={() => setFundAmt(n)}
+              className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all cursor-pointer hover:-translate-y-px ${
+                fundAmt === n
+                  ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                  : "bg-white text-gray-500 border-gray-200 hover:border-blue-300 hover:text-blue-600"
+              }`}
+            >
+              {n} ETH
+            </button>
+          ))}
+          <input
+            type="number"
+            step="0.01"
+            placeholder="Custom"
+            value={fundAmt}
+            onChange={(e) => setFundAmt(e.target.value)}
+            className={inputCls + " flex-1"}
+          />
+        </div>
+        <button
+          onClick={() => parseFloat(fundAmt) > 0 && onFund(fundAmt)}
+          disabled={loading === "fund" || !(parseFloat(fundAmt) > 0)}
+          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-sm hover:-translate-y-px active:translate-y-0"
+        >
+          {loading === "fund" ? <><Spinner /> Sending...</> : "💧 Fund Contract"}
+        </button>
+        <p className="text-xs text-gray-400 mt-3">ETH отправится в контракт через MetaMask. Пользователи смогут продавать GC после этого.</p>
       </Section>
 
       {/* ── WITHDRAW ── */}
