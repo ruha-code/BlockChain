@@ -13,6 +13,33 @@ Users can:
 
 The system is based on an ERC-20 token and is designed to keep credit transfers transparent and tamper-resistant.
 
+## Quick Start
+
+If you extracted the ZIP archive, first open the inner project folder that contains `package.json`.
+
+Example path:
+
+```text
+C:\Users\YourName\Desktop\BlockChain\BlockChain
+```
+
+Then run:
+
+```bash
+npm install
+cd frontend
+npm install
+npm run dev
+```
+
+Open in browser:
+
+```text
+http://localhost:5173
+```
+
+If `npm install` says it cannot find `package.json`, you are in the wrong folder. Move into the folder that contains `package.json` and run the commands again.
+
 ## Current Status
 
 Checked on May 7, 2026:
