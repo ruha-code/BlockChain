@@ -8,10 +8,13 @@ const PAGE_META = {
   transactions: { title: "Transaction History",sub: "All your on-chain activity" },
   profile:      { title: "Profile",            sub: "Your account details" },
   treasury:     { title: "Treasury",           sub: "Contract liquidity and stats" },
-  owner:        { title: "Admin Panel",        sub: "Manage exchange rates" },
+  owner:        { title: "Admin Panel",        sub: "Manage contract settings" },
+  membership:   { title: "Membership",         sub: "Activate your gym membership" },
+  leaderboard:  { title: "Leaderboard",        sub: "Top GC token holders" },
+  market:       { title: "Market",             sub: "Live ETH price and GC rates" },
 };
 
-export default function Header({ account, ethBalance, activeTab }) {
+export default function Header({ account, ethBalance, activeTab, isPaused }) {
   const meta = PAGE_META[activeTab] || { title: "Gym Coin", sub: "" };
 
   return (
@@ -26,6 +29,12 @@ export default function Header({ account, ethBalance, activeTab }) {
 
       {/* Right: pills */}
       <div className="flex items-center gap-2">
+        {/* Paused badge */}
+        {isPaused && (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 border border-red-200 rounded-full text-xs font-bold text-red-600 animate-pulse">
+            ⏸ Paused
+          </div>
+        )}
         {/* Network */}
         <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-full text-xs font-semibold text-emerald-700">
           <span className="relative flex h-2 w-2">

@@ -8,13 +8,8 @@ import {
   USER_PROFILE_ABI,
 } from "../constants";
 
-// Role hashes computed once
-const DEFAULT_ADMIN_ROLE     = "0x0000000000000000000000000000000000000000000000000000000000000000";
-const PAUSER_ROLE            = ethers.id("PAUSER_ROLE");
-const RATE_MANAGER_ROLE      = ethers.id("RATE_MANAGER_ROLE");
-const BLACKLIST_MANAGER_ROLE = ethers.id("BLACKLIST_MANAGER_ROLE");
-
-export { DEFAULT_ADMIN_ROLE, PAUSER_ROLE, RATE_MANAGER_ROLE, BLACKLIST_MANAGER_ROLE };
+const DEFAULT_ADMIN_ROLE = "0x0000000000000000000000000000000000000000000000000000000000000000";
+export { DEFAULT_ADMIN_ROLE };
 
 const formatError = (err) => {
   const msg = (err.message || "").toLowerCase();
@@ -41,8 +36,9 @@ export function useWallet() {
   const [userProfile, setUserProfile] = useState(null);
 
   // ── Balances ─────────────────────────────────────────────────────────────────
-  const [balance, setBalance]         = useState("0");
-  const [ethBalance, setEthBalance]   = useState("0");
+  const [balance, setBalance]                   = useState("0");
+  const [ethBalance, setEthBalance]             = useState("0");
+  const [contractEthBalance, setContractEthBalance] = useState("0");
 
   // ── Profile ──────────────────────────────────────────────────────────────────
   const [username, setUsername]       = useState("");
@@ -50,10 +46,7 @@ export function useWallet() {
   const [isRegistered, setIsRegistered] = useState(false);
 
   // ── Roles ────────────────────────────────────────────────────────────────────
-  const [isOwner, setIsOwner]                       = useState(false); // DEFAULT_ADMIN_ROLE
-  const [isPauser, setIsPauser]                     = useState(false);
-  const [isRateManager, setIsRateManager]           = useState(false);
-  const [isBlacklistManager, setIsBlacklistManager] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   // ── Contract state ───────────────────────────────────────────────────────────
   const [rates, setRates]             = useState({ sell: "0", buy: "0" });
@@ -138,9 +131,15 @@ export function useWallet() {
 
   // ── Balance refresh ───────────────────────────────────────────────────────────
   const refreshBalance = useCallback(async (gc, addr, prov) => {
-    const [bal, ethBal, decimals] = await Promise.all([gc.balanceOf(addr), prov.getBalance(addr), gc.decimals()]);
+    const [bal, ethBal, contractEthBal, decimals] = await Promise.all([
+      gc.balanceOf(addr),
+      prov.getBalance(addr),
+      prov.getBalance(GYM_COIN_ADDRESS),
+      gc.decimals(),
+    ]);
     setBalance(ethers.formatUnits(bal, decimals));
     setEthBalance(parseFloat(ethers.formatEther(ethBal)).toFixed(4));
+    setContractEthBalance(parseFloat(ethers.formatEther(contractEthBal)).toFixed(4));
   }, []);
 
   // ── Transaction history ───────────────────────────────────────────────────────
@@ -157,28 +156,46 @@ export function useWallet() {
       const blocks = await Promise.all(blockNums.map((n) => prov.getBlock(n)));
       const blockTs = {};
       blocks.forEach((b) => { if (b) blockTs[b.number] = b.timestamp; });
-      const decimals = await gc.decimals();
+      const decimals = Number(await gc.decimals());
       const ZERO = "0x0000000000000000000000000000000000000000";
       const history = [];
+      const fmtTs = (blockNum) => blockTs[blockNum] ? new Date(blockTs[blockNum] * 1000).toLocaleString() : "—";
       for (const ev of bought) {
-        history.push({ type: "buy", gcAmount: ethers.formatUnits(ev.args.gcAmount * 10n ** BigInt(decimals), decimals), ethAmount: ethers.formatEther(ev.args.ethAmount), block: ev.blockNumber, txHash: ev.transactionHash, status: "success", timestamp: blockTs[ev.blockNumber] ? new Date(blockTs[ev.blockNumber] * 1000).toLocaleString() : "—" });
+        history.push({ type: "buy", gcAmount: ev.args.gcAmount.toString(), ethAmount: ethers.formatEther(ev.args.ethAmount), block: ev.blockNumber, txHash: ev.transactionHash, status: "success", timestamp: fmtTs(ev.blockNumber) });
       }
       for (const ev of sold) {
-        history.push({ type: "sell", gcAmount: ethers.formatUnits(ev.args.gcAmount * 10n ** BigInt(decimals), decimals), ethAmount: ethers.formatEther(ev.args.ethAmount), block: ev.blockNumber, txHash: ev.transactionHash, status: "success", timestamp: blockTs[ev.blockNumber] ? new Date(blockTs[ev.blockNumber] * 1000).toLocaleString() : "—" });
+        history.push({ type: "sell", gcAmount: ev.args.gcAmount.toString(), ethAmount: ethers.formatEther(ev.args.ethAmount), block: ev.blockNumber, txHash: ev.transactionHash, status: "success", timestamp: fmtTs(ev.blockNumber) });
       }
       for (const ev of sent) {
         if (ev.args.to.toLowerCase() === addr.toLowerCase()) continue;
-        history.push({ type: "transfer", gcAmount: ethers.formatUnits(ev.args.value, decimals), ethAmount: "0", to: ev.args.to, block: ev.blockNumber, txHash: ev.transactionHash, status: "success", timestamp: blockTs[ev.blockNumber] ? new Date(blockTs[ev.blockNumber] * 1000).toLocaleString() : "—" });
+        history.push({ type: "transfer", gcAmount: ethers.formatUnits(ev.args.value, decimals), ethAmount: "0", to: ev.args.to, block: ev.blockNumber, txHash: ev.transactionHash, status: "success", timestamp: fmtTs(ev.blockNumber) });
       }
       for (const ev of received) {
         if (ev.args.from === ZERO) continue;
         if (ev.args.from.toLowerCase() === addr.toLowerCase()) continue;
-        history.push({ type: "received", gcAmount: ethers.formatUnits(ev.args.value, decimals), ethAmount: "0", from: ev.args.from, block: ev.blockNumber, txHash: ev.transactionHash, status: "success", timestamp: blockTs[ev.blockNumber] ? new Date(blockTs[ev.blockNumber] * 1000).toLocaleString() : "—" });
+        history.push({ type: "received", gcAmount: ethers.formatUnits(ev.args.value, decimals), ethAmount: "0", from: ev.args.from, block: ev.blockNumber, txHash: ev.transactionHash, status: "success", timestamp: fmtTs(ev.blockNumber) });
       }
       history.sort((a, b) => b.block - a.block);
       return history;
     } catch { return []; }
   };
+
+  // ── GC Rates history loader ───────────────────────────────────────────────────
+  const loadRatesHistory = useCallback(async () => {
+    if (!gymCoin || !provider) return [];
+    try {
+      const events = await gymCoin.queryFilter(gymCoin.filters.RatesUpdated());
+      const blockNums = [...new Set(events.map((e) => e.blockNumber))];
+      const blocks = await Promise.all(blockNums.map((n) => provider.getBlock(n)));
+      const blockTs = {};
+      blocks.forEach((b) => { if (b) blockTs[b.number] = b.timestamp; });
+      return events.map((ev) => ({
+        timestamp: blockTs[ev.blockNumber] ?? 0,
+        sellRate: parseFloat(ethers.formatUnits(ev.args.newSellRate, 18)),
+        buyRate:  parseFloat(ethers.formatUnits(ev.args.newBuyRate,  18)),
+      })).sort((a, b) => a.timestamp - b.timestamp);
+    } catch { return []; }
+  }, [gymCoin, provider]);
 
   // ── Leaderboard loader ────────────────────────────────────────────────────────
   const loadLeaderboard = useCallback(async () => {
@@ -227,7 +244,7 @@ export function useWallet() {
 
       const [
         registered,
-        isAdmin, hasPauser, hasRateMgr, hasBlacklistMgr,
+        isAdmin,
         sellRate, buyRate,
         maxBuy, maxSell,
         mPrice, mDuration,
@@ -236,9 +253,6 @@ export function useWallet() {
       ] = await Promise.all([
         up.isRegistered(addr),
         gc.hasRole(DEFAULT_ADMIN_ROLE, addr),
-        gc.hasRole(PAUSER_ROLE, addr),
-        gc.hasRole(RATE_MANAGER_ROLE, addr),
-        gc.hasRole(BLACKLIST_MANAGER_ROLE, addr),
         gc.sellRate(),
         gc.buyRate(),
         gc.maxBuyAmount(),
@@ -252,9 +266,6 @@ export function useWallet() {
 
       setIsRegistered(registered);
       setIsOwner(isAdmin);
-      setIsPauser(hasPauser);
-      setIsRateManager(hasRateMgr);
-      setIsBlacklistManager(hasBlacklistMgr);
       setRates({ sell: ethers.formatUnits(sellRate, 18), buy: ethers.formatUnits(buyRate, 18) });
       setLimits({ maxBuy: maxBuy.toString(), maxSell: maxSell.toString() });
       setMembershipConfig({ price: mPrice.toString(), duration: mDuration.toString() });
@@ -285,8 +296,8 @@ export function useWallet() {
   const disconnectWallet = () => {
     setAccount(null); setProvider(null); setGymCoin(null); setUserProfile(null);
     setBalance("0"); setEthBalance("0"); setUsername(""); setEmail("");
-    setIsRegistered(false); setIsOwner(false); setIsPauser(false);
-    setIsRateManager(false); setIsBlacklistManager(false);
+    setIsRegistered(false); setIsOwner(false);
+    setContractEthBalance("0");
     setRates({ sell: "0", buy: "0" });
     setLimits({ maxBuy: "0", maxSell: "0" });
     setMembershipConfig({ price: "0", duration: "0" });
@@ -496,8 +507,8 @@ export function useWallet() {
 
   return {
     // state
-    account, balance, ethBalance, username, email,
-    isRegistered, isOwner, isPauser, isRateManager, isBlacklistManager,
+    account, balance, ethBalance, contractEthBalance, username, email,
+    isRegistered, isOwner,
     rates, limits, isPaused,
     isMember, membershipExpiry, membershipConfig,
     txHistory, txCount,
@@ -513,6 +524,6 @@ export function useWallet() {
     blacklistAddr, unblacklistAddr,
     updateMembershipConfig, buyMembership,
     grantRole, revokeRole,
-    loadLeaderboard,
+    loadLeaderboard, loadRatesHistory,
   };
 }

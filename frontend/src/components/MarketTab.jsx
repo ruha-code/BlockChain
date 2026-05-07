@@ -1,18 +1,36 @@
 import { useState, useEffect, useCallback } from "react";
 
-const COINGECKO = "https://api.coingecko.com/api/v3";
+const BINANCE = "https://api.binance.com/api/v3";
+const SYMBOL  = "ETHUSDT";
 
-// ── Fetch helpers ─────────────────────────────────────────────────────────────
+// ── Fetch helpers (Binance — no key, no rate limits) ──────────────────────────
 async function fetchEthPrice() {
-  const r = await fetch(`${COINGECKO}/simple/price?ids=ethereum&vs_currencies=usd&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true`);
-  const d = await r.json();
-  return d.ethereum;
+  const [ticker, stats] = await Promise.all([
+    fetch(`${BINANCE}/ticker/price?symbol=${SYMBOL}`).then((r) => r.json()),
+    fetch(`${BINANCE}/ticker/24hr?symbol=${SYMBOL}`).then((r) => r.json()),
+  ]);
+  return {
+    usd:            parseFloat(ticker.price),
+    usd_24h_change: parseFloat(stats.priceChangePercent),
+    usd_market_cap: 0,   // Binance doesn't provide market cap — hide it
+    usd_24h_vol:    parseFloat(stats.quoteVolume),
+  };
+}
+
+// days → Binance kline interval + limit
+function rangeToKline(days) {
+  if (days <= 1)  return { interval: "1h",  limit: 24  };
+  if (days <= 7)  return { interval: "4h",  limit: 42  };
+  if (days <= 30) return { interval: "1d",  limit: 30  };
+  return              { interval: "1d",  limit: 90  };
 }
 
 async function fetchEthChart(days = 7) {
-  const r = await fetch(`${COINGECKO}/coins/ethereum/market_chart?vs_currency=usd&days=${days}`);
+  const { interval, limit } = rangeToKline(days);
+  const r = await fetch(`${BINANCE}/klines?symbol=${SYMBOL}&interval=${interval}&limit=${limit}`);
   const d = await r.json();
-  return d.prices; // [[timestamp, price], ...]
+  // kline: [openTime, open, high, low, close, ...]
+  return d.map((k) => [k[0], parseFloat(k[4])]); // [[timestamp_ms, closePrice]]
 }
 
 // ── SVG sparkline chart ───────────────────────────────────────────────────────
@@ -109,6 +127,66 @@ function fmtChange(n) {
   return `${s}${n.toFixed(2)}%`;
 }
 
+// ── GC Price History Chart ────────────────────────────────────────────────────
+function GCPriceChart({ history, ethUSD }) {
+  if (!history || history.length === 0) {
+    return (
+      <div className="h-36 flex flex-col items-center justify-center gap-2 text-gray-400">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        <p className="text-xs">No rate changes recorded yet</p>
+        <p className="text-[11px] text-gray-300">Chart will appear after admin updates rates</p>
+      </div>
+    );
+  }
+
+  const points = history.map((h) => ({
+    ts:      h.timestamp,
+    buyUSD:  h.sellRate * ethUSD,
+    label:   new Date(h.timestamp * 1000).toLocaleDateString([], { month: "short", day: "numeric" }),
+  }));
+
+  const W = 500, H = 100;
+  const values = points.map((p) => p.buyUSD);
+  const minV = Math.min(...values) * 0.9;
+  const maxV = Math.max(...values) * 1.1;
+  const range = maxV - minV || 1;
+
+  const toX = (i) => points.length === 1 ? W / 2 : (i / (points.length - 1)) * W;
+  const toY = (v) => H - ((v - minV) / range) * (H - 16) - 8;
+
+  const pts   = points.map((p, i) => `${toX(i)},${toY(p.buyUSD)}`);
+  const area  = `0,${H} ${pts.join(" ")} ${W},${H}`;
+  const isUp  = points.length > 1 ? points[points.length - 1].buyUSD >= points[0].buyUSD : true;
+  const color = isUp ? "#059669" : "#ef4444";
+
+  return (
+    <div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-36" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="gc-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stopColor={color} stopOpacity="0.18" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <polygon points={area} fill="url(#gc-grad)" />
+        <polyline points={pts.join(" ")} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {points.map((p, i) => (
+          <circle key={i} cx={toX(i)} cy={toY(p.buyUSD)} r={i === points.length - 1 ? 5 : 3} fill={color} fillOpacity={i === points.length - 1 ? 1 : 0.5} />
+        ))}
+      </svg>
+      {points.length <= 10 && (
+        <div className="flex justify-between px-1 mt-1">
+          {points.map((p, i) => (
+            <span key={i} className="text-[9px] text-gray-400">{p.label}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 const RANGES = [
   { label: "1D", days: 1 },
@@ -117,11 +195,13 @@ const RANGES = [
   { label: "3M", days: 90 },
 ];
 
-export default function MarketTab({ rates }) {
-  const [ethData,  setEthData]  = useState(null);
-  const [chart,    setChart]    = useState([]);
-  const [range,    setRange]    = useState(7);
-  const [loading,  setLoading]  = useState(true);
+export default function MarketTab({ rates, loadRatesHistory }) {
+  const [ethData,      setEthData]      = useState(null);
+  const [chart,        setChart]        = useState([]);
+  const [range,        setRange]        = useState(7);
+  const [loading,      setLoading]      = useState(true);
+  const [gcHistory,    setGcHistory]    = useState([]);
+  const [gcLoading,    setGcLoading]    = useState(true);
   const [error,    setError]    = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
 
@@ -134,7 +214,7 @@ export default function MarketTab({ rates }) {
       setChart(chartData);
       setLastUpdate(new Date());
     } catch (e) {
-      setError("Failed to load market data. CoinGecko may be rate-limiting — try again in a moment.");
+      setError("Failed to load market data from Binance. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -147,6 +227,13 @@ export default function MarketTab({ rates }) {
     const id = setInterval(() => load(range), 60_000);
     return () => clearInterval(id);
   }, [range, load]);
+
+  // Load GC rate history from contract events
+  useEffect(() => {
+    if (!loadRatesHistory) return;
+    setGcLoading(true);
+    loadRatesHistory().then((h) => { setGcHistory(h); setGcLoading(false); });
+  }, [loadRatesHistory]);
 
   const ethUSD   = ethData?.usd ?? 0;
   const change24 = ethData?.usd_24h_change ?? null;
@@ -247,11 +334,10 @@ export default function MarketTab({ rates }) {
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-3 border-t border-gray-50">
+        <div className="grid grid-cols-2 border-t border-gray-50">
           {[
-            { label: "Market Cap",  value: fmtUSD(mcap) },
-            { label: "24h Volume",  value: fmtUSD(vol24) },
-            { label: "24h Change",  value: fmtChange(change24), colored: true },
+            { label: "24h Volume (USDT)", value: fmtUSD(vol24) },
+            { label: "24h Change",        value: fmtChange(change24), colored: true },
           ].map(({ label, value, colored }) => (
             <div key={label} className="px-5 py-3.5 border-r border-gray-50 last:border-r-0">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{label}</p>
@@ -328,6 +414,52 @@ export default function MarketTab({ rates }) {
         </div>
       </div>
 
+      {/* ── GC Price History ── */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="px-6 pt-5 pb-3">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center shadow-sm">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-900">Gym Coin (GC)</p>
+                <p className="text-xs text-gray-400">Price history from on-chain rate changes</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-extrabold text-gray-900">{fmtUSD(gcBuyUSD)}</p>
+              <p className="text-xs text-gray-400 mt-0.5">Current buy price</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-4 pb-2">
+          {gcLoading ? (
+            <div className="h-36 flex items-center justify-center">
+              <div className="w-6 h-6 border-2 border-gray-200 border-t-emerald-500 rounded-full animate-spin" />
+            </div>
+          ) : (
+            <GCPriceChart history={gcHistory} ethUSD={ethUSD} />
+          )}
+        </div>
+
+        <div className="grid grid-cols-3 border-t border-gray-50">
+          {[
+            { label: "Rate Changes", value: gcHistory.length === 0 ? "0" : gcHistory.length.toString() },
+            { label: "Buy Price",    value: fmtUSD(gcBuyUSD)  },
+            { label: "Sell Price",   value: fmtUSD(gcSellUSD) },
+          ].map(({ label, value }) => (
+            <div key={label} className="px-5 py-3.5 border-r border-gray-50 last:border-r-0">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{label}</p>
+              <p className="text-sm font-bold text-gray-900">{value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* ── Spread info ── */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <p className="text-sm font-bold text-gray-900 mb-4">Spread Analysis</p>
@@ -360,7 +492,7 @@ export default function MarketTab({ rates }) {
           </svg>
           <p className="text-xs text-blue-700">
             The spread is the difference between buy and sell rates. It represents the platform's margin.
-            ETH prices are fetched live from <span className="font-semibold">CoinGecko</span>.
+            ETH prices are fetched live from <span className="font-semibold">Binance</span>.
             GC prices are calculated using the current contract rates.
           </p>
         </div>
@@ -371,7 +503,7 @@ export default function MarketTab({ rates }) {
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
         </svg>
-        Live data from CoinGecko · Contract rates from Sepolia Testnet
+        Live data from Binance · Contract rates from Sepolia Testnet
       </div>
     </div>
   );

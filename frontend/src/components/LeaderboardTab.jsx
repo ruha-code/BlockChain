@@ -24,18 +24,18 @@ export default function LeaderboardTab({ account, loadLeaderboard }) {
   const [loading, setLoading]   = useState(true);
   const [refreshed, setRefreshed] = useState(false);
 
-  const fetch = async () => {
+  const loadData = async () => {
     setLoading(true);
     const data = await loadLeaderboard();
     setEntries(data);
     setLoading(false);
   };
 
-  useEffect(() => { fetch(); }, []);
+  useEffect(() => { loadData(); }, []);
 
   const handleRefresh = async () => {
     setRefreshed(true);
-    await fetch();
+    await loadData();
     setTimeout(() => setRefreshed(false), 2000);
   };
 

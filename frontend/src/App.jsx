@@ -51,16 +51,13 @@ export default function App() {
             balance={wallet.balance}
             ethBalance={wallet.ethBalance}
             username={wallet.username}
-            email={wallet.email}
             isRegistered={wallet.isRegistered}
             txHistory={wallet.txHistory}
             txCount={wallet.txCount}
             rates={wallet.rates}
-            loadingAction={wallet.loadingAction}
             isMember={wallet.isMember}
             membershipExpiry={wallet.membershipExpiry}
             isPaused={wallet.isPaused}
-            onRegister={wallet.registerUser}
             setActiveTab={wallet.setActiveTab}
           />
         );
@@ -117,7 +114,7 @@ export default function App() {
         return (
           <TreasuryTab
             balance={wallet.balance}
-            ethBalance={wallet.ethBalance}
+            ethBalance={wallet.contractEthBalance}
             txHistory={wallet.txHistory}
             rates={wallet.rates}
           />
@@ -141,7 +138,7 @@ export default function App() {
           />
         );
       case "market":
-        return <MarketTab rates={wallet.rates} />;
+        return <MarketTab rates={wallet.rates} loadRatesHistory={wallet.loadRatesHistory} />;
       case "owner":
         return (
           <OwnerTab
@@ -150,9 +147,6 @@ export default function App() {
             membershipConfig={wallet.membershipConfig}
             isPaused={wallet.isPaused}
             isOwner={wallet.isOwner}
-            isPauser={wallet.isPauser}
-            isRateManager={wallet.isRateManager}
-            isBlacklistManager={wallet.isBlacklistManager}
             onUpdateRates={wallet.updateRates}
             onUpdateLimits={wallet.updateLimits}
             onPause={wallet.pauseContract}
@@ -160,8 +154,6 @@ export default function App() {
             onBlacklist={wallet.blacklistAddr}
             onUnblacklist={wallet.unblacklistAddr}
             onUpdateMembership={wallet.updateMembershipConfig}
-            onGrantRole={wallet.grantRole}
-            onRevokeRole={wallet.revokeRole}
             loading={wallet.loadingAction}
           />
         );
@@ -176,9 +168,6 @@ export default function App() {
         activeTab={wallet.activeTab}
         setActiveTab={wallet.setActiveTab}
         isOwner={wallet.isOwner}
-        isPauser={wallet.isPauser}
-        isRateManager={wallet.isRateManager}
-        isBlacklistManager={wallet.isBlacklistManager}
         onDisconnect={wallet.disconnectWallet}
         txCount={wallet.txCount}
         username={wallet.username}

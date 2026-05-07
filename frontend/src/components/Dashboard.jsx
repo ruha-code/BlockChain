@@ -5,9 +5,14 @@ function useEthPrice() {
   const [price, setPrice]   = useState(null);
   const [change, setChange] = useState(null);
   useEffect(() => {
-    fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd&include_24hr_change=true")
-      .then((r) => r.json())
-      .then((d) => { setPrice(d.ethereum?.usd); setChange(d.ethereum?.usd_24h_change); })
+    Promise.all([
+      fetch("https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT").then((r) => r.json()),
+      fetch("https://api.binance.com/api/v3/ticker/24hr?symbol=ETHUSDT").then((r) => r.json()),
+    ])
+      .then(([ticker, stats]) => {
+        setPrice(parseFloat(ticker.price));
+        setChange(parseFloat(stats.priceChangePercent));
+      })
       .catch(() => {});
   }, []);
   return { price, change };

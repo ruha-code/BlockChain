@@ -7,9 +7,6 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 contract GymCoin is ERC20, AccessControl, Pausable, ReentrancyGuard {
-    bytes32 public constant PAUSER_ROLE         = keccak256("PAUSER_ROLE");
-    bytes32 public constant RATE_MANAGER_ROLE   = keccak256("RATE_MANAGER_ROLE");
-    bytes32 public constant BLACKLIST_MANAGER_ROLE = keccak256("BLACKLIST_MANAGER_ROLE");
 
     address public adminAddress;
 
@@ -20,8 +17,8 @@ contract GymCoin is ERC20, AccessControl, Pausable, ReentrancyGuard {
 
     mapping(address => bool)    public blacklisted;
     mapping(address => uint256) public membershipExpiry;
-    uint256 public membershipPrice;    // whole GC units
-    uint256 public membershipDuration; // seconds
+    uint256 public membershipPrice;
+    uint256 public membershipDuration;
 
     event TokensBought(address indexed buyer, uint256 gcAmount, uint256 ethAmount);
     event TokensSold(address indexed seller, uint256 gcAmount, uint256 ethAmount);
@@ -31,6 +28,11 @@ contract GymCoin is ERC20, AccessControl, Pausable, ReentrancyGuard {
     event Unblacklisted(address indexed account);
     event MembershipPurchased(address indexed member, uint256 expiry);
     event MembershipConfigUpdated(uint256 price, uint256 duration);
+
+    modifier onlyAdmin() {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not admin");
+        _;
+    }
 
     constructor(
         uint256 initialSupply,
@@ -42,44 +44,40 @@ contract GymCoin is ERC20, AccessControl, Pausable, ReentrancyGuard {
         uint256 _membershipDuration
     ) ERC20("Gym Coin", "GC") {
         adminAddress = msg.sender;
-
-        _grantRole(DEFAULT_ADMIN_ROLE,       msg.sender);
-        _grantRole(PAUSER_ROLE,              msg.sender);
-        _grantRole(RATE_MANAGER_ROLE,        msg.sender);
-        _grantRole(BLACKLIST_MANAGER_ROLE,   msg.sender);
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
 
         _mint(msg.sender, initialSupply * 10 ** decimals());
 
-        sellRate         = _sellRate;
-        buyRate          = _buyRate;
-        maxBuyAmount     = _maxBuyAmount;
-        maxSellAmount    = _maxSellAmount;
-        membershipPrice  = _membershipPrice;
+        sellRate           = _sellRate;
+        buyRate            = _buyRate;
+        maxBuyAmount       = _maxBuyAmount;
+        maxSellAmount      = _maxSellAmount;
+        membershipPrice    = _membershipPrice;
         membershipDuration = _membershipDuration;
     }
 
-    // ─── Transfer hook: pause + blacklist for all token movements ────────────
+    // ─── Transfer hook: pause + blacklist ─────────────────────────────────────
     function _update(address from, address to, uint256 value) internal override {
         if (from != address(0)) {
-            require(!paused(),            "Contract is paused");
-            require(!blacklisted[from],   "Sender is blacklisted");
+            require(!paused(),          "Contract is paused");
+            require(!blacklisted[from], "Sender is blacklisted");
         }
         if (to != address(0)) {
-            require(!blacklisted[to],     "Recipient is blacklisted");
+            require(!blacklisted[to],   "Recipient is blacklisted");
         }
         super._update(from, to, value);
     }
 
     // ─── Buy ─────────────────────────────────────────────────────────────────
     function buy(uint256 gcAmount) public payable nonReentrant {
-        require(gcAmount > 0,               "Amount must be greater than 0");
-        require(gcAmount <= maxBuyAmount,   "Exceeds max buy amount");
+        require(gcAmount > 0,             "Amount must be greater than 0");
+        require(gcAmount <= maxBuyAmount, "Exceeds max buy amount");
 
         uint256 gcWei       = gcAmount * 10 ** decimals();
         uint256 requiredEth = (gcAmount * sellRate) / (10 ** decimals());
 
-        require(msg.value >= requiredEth,               "Insufficient ETH sent");
-        require(balanceOf(adminAddress) >= gcWei,       "Owner has insufficient tokens");
+        require(msg.value >= requiredEth,         "Insufficient ETH sent");
+        require(balanceOf(adminAddress) >= gcWei, "Owner has insufficient tokens");
 
         _transfer(adminAddress, msg.sender, gcWei);
 
@@ -94,14 +92,14 @@ contract GymCoin is ERC20, AccessControl, Pausable, ReentrancyGuard {
 
     // ─── Sell ────────────────────────────────────────────────────────────────
     function sell(uint256 gcAmount) public nonReentrant {
-        require(gcAmount > 0,               "Amount must be greater than 0");
-        require(gcAmount <= maxSellAmount,  "Exceeds max sell amount");
+        require(gcAmount > 0,              "Amount must be greater than 0");
+        require(gcAmount <= maxSellAmount, "Exceeds max sell amount");
 
         uint256 gcWei     = gcAmount * 10 ** decimals();
         uint256 ethAmount = (gcAmount * buyRate) / (10 ** decimals());
 
-        require(balanceOf(msg.sender) >= gcWei,        "Insufficient token balance");
-        require(address(this).balance >= ethAmount,    "Contract has insufficient ETH");
+        require(balanceOf(msg.sender) >= gcWei,     "Insufficient token balance");
+        require(address(this).balance >= ethAmount, "Contract has insufficient ETH");
 
         _transfer(msg.sender, adminAddress, gcWei);
 
@@ -113,7 +111,7 @@ contract GymCoin is ERC20, AccessControl, Pausable, ReentrancyGuard {
 
     // ─── Membership ──────────────────────────────────────────────────────────
     function buyMembership() public nonReentrant {
-        require(membershipPrice > 0,    "Membership not configured");
+        require(membershipPrice > 0, "Membership not configured");
 
         uint256 priceWei = membershipPrice * 10 ** decimals();
         require(balanceOf(msg.sender) >= priceWei, "Insufficient GC balance");
@@ -132,58 +130,43 @@ contract GymCoin is ERC20, AccessControl, Pausable, ReentrancyGuard {
         return membershipExpiry[_account] > block.timestamp;
     }
 
-    // ─── Admin: rates ────────────────────────────────────────────────────────
-    function setRates(uint256 _sellRate, uint256 _buyRate)
-        public onlyRole(RATE_MANAGER_ROLE)
-    {
+    // ─── Admin only ──────────────────────────────────────────────────────────
+    function setRates(uint256 _sellRate, uint256 _buyRate) public onlyAdmin {
         require(_sellRate > 0 && _buyRate > 0, "Rates must be > 0");
         sellRate = _sellRate;
         buyRate  = _buyRate;
         emit RatesUpdated(_sellRate, _buyRate);
     }
 
-    // ─── Admin: limits ───────────────────────────────────────────────────────
-    function setLimits(uint256 _maxBuy, uint256 _maxSell)
-        public onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    function setLimits(uint256 _maxBuy, uint256 _maxSell) public onlyAdmin {
         require(_maxBuy > 0 && _maxSell > 0, "Limits must be > 0");
         maxBuyAmount  = _maxBuy;
         maxSellAmount = _maxSell;
         emit LimitsUpdated(_maxBuy, _maxSell);
     }
 
-    // ─── Admin: membership config ─────────────────────────────────────────────
-    function setMembershipConfig(uint256 _price, uint256 _duration)
-        public onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    function setMembershipConfig(uint256 _price, uint256 _duration) public onlyAdmin {
         require(_duration > 0, "Duration must be > 0");
         membershipPrice    = _price;
         membershipDuration = _duration;
         emit MembershipConfigUpdated(_price, _duration);
     }
 
-    // ─── Admin: blacklist ────────────────────────────────────────────────────
-    function blacklistAddress(address _account)
-        public onlyRole(BLACKLIST_MANAGER_ROLE)
-    {
+    function blacklistAddress(address _account) public onlyAdmin {
         require(_account != adminAddress, "Cannot blacklist admin");
         blacklisted[_account] = true;
         emit Blacklisted(_account);
     }
 
-    function unblacklistAddress(address _account)
-        public onlyRole(BLACKLIST_MANAGER_ROLE)
-    {
+    function unblacklistAddress(address _account) public onlyAdmin {
         blacklisted[_account] = false;
         emit Unblacklisted(_account);
     }
 
-    // ─── Admin: pause ────────────────────────────────────────────────────────
-    function pause()   public onlyRole(PAUSER_ROLE) { _pause();   }
-    function unpause() public onlyRole(PAUSER_ROLE) { _unpause(); }
+    function pause()   public onlyAdmin { _pause();   }
+    function unpause() public onlyAdmin { _unpause(); }
 
-    // ─── Admin: withdraw ETH ─────────────────────────────────────────────────
-    function withdraw() public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function withdraw() public onlyAdmin {
         uint256 bal = address(this).balance;
         require(bal > 0, "No ETH to withdraw");
         (bool sent, ) = adminAddress.call{value: bal}("");

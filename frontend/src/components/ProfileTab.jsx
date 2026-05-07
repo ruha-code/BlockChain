@@ -189,12 +189,20 @@ export default function ProfileTab({
             </div>
 
             {/* Avatar + info row */}
-            <div className="px-6 pb-5">
-              <div className="flex items-end justify-between -mt-7 mb-4">
-                <div className="w-14 h-14 rounded-full bg-emerald-600 border-4 border-white shadow-sm flex items-center justify-center flex-shrink-0">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-                  </svg>
+            <div className="px-6 pb-5 relative z-10">
+              <div className="flex items-end justify-between -mt-8 mb-4">
+                <div className="w-16 h-16 rounded-full bg-white border-4 border-white shadow-xl flex items-center justify-center flex-shrink-0">
+                  <div className="w-full h-full rounded-full bg-emerald-100 flex items-center justify-center overflow-hidden">
+                    {isRegistered && username ? (
+                      <span className="text-2xl font-extrabold text-emerald-700 select-none leading-none">
+                        {username.charAt(0).toUpperCase()}
+                      </span>
+                    ) : (
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="#059669" stroke="none">
+                        <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-3.33 0-10 1.68-10 5v2h20v-2c0-3.32-6.67-5-10-5z"/>
+                      </svg>
+                    )}
+                  </div>
                 </div>
                 <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
                   isRegistered
@@ -221,22 +229,23 @@ export default function ProfileTab({
                   stroke: "#059669", bg: "bg-emerald-50",
                   value: parseFloat(balance).toLocaleString(undefined, { maximumFractionDigits: 0 }),
                   label: "GC Balance", sub: "GC Tokens",
+                  violet: false,
                 },
                 {
                   icon: <><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /></>,
                   stroke: "#6366f1", bg: "bg-violet-50",
                   value: txCount,
                   label: "Transactions", sub: "On-chain",
+                  violet: false,
                 },
                 {
                   icon: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
                   stroke: isMember ? "#7c3aed" : "#9ca3af", bg: isMember ? "bg-violet-50" : "bg-gray-50",
                   value: isMember ? "PRO ✦" : "None",
                   label: "Membership", sub: "Status",
-                  green: isMember ? null : false,
                   violet: isMember,
                 },
-              ].map(({ icon, stroke, bg, value, label, sub, green }) => (
+              ].map(({ icon, stroke, bg, value, label, sub, violet }) => (
                 <div key={label} className="flex items-center gap-3 px-5 py-4 border-r border-gray-50 last:border-r-0">
                   <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center flex-shrink-0`}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -245,7 +254,7 @@ export default function ProfileTab({
                   </div>
                   <div>
                     <p className="text-[10px] font-semibold text-gray-400 mb-0.5">{label}</p>
-                    <p className={`text-lg font-extrabold leading-none ${violet ? "text-violet-600" : green === true ? "text-emerald-600" : green === false ? "text-amber-500" : "text-gray-900"}`}>
+                    <p className={`text-lg font-extrabold leading-none ${violet ? "text-violet-600" : "text-gray-900"}`}>
                       {value}
                     </p>
                     <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>

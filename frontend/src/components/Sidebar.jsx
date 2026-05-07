@@ -82,10 +82,10 @@ function NavItem({ item, active, onClick, badge }) {
 
 export default function Sidebar({
   activeTab, setActiveTab,
-  isOwner, isPauser, isRateManager, isBlacklistManager,
+  isOwner,
   onDisconnect, txCount, username, isRegistered, isMember, isPaused,
 }) {
-  const hasAdminAccess = isOwner || isPauser || isRateManager || isBlacklistManager;
+  const hasAdminAccess = isOwner;
 
   return (
     <aside className="w-[220px] bg-white border-r border-gray-100 flex flex-col fixed h-screen z-[100]">
@@ -152,8 +152,8 @@ export default function Sidebar({
           className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-all duration-150 group text-left"
         >
           <div className="relative w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-150">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white" stroke="none">
+              <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-3.33 0-10 1.68-10 5v2h20v-2c0-3.32-6.67-5-10-5z"/>
             </svg>
             {isMember && (
               <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-violet-500 border border-white rounded-full flex items-center justify-center">

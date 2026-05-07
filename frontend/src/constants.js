@@ -1,5 +1,5 @@
-export const GYM_COIN_ADDRESS     = "0x1c44faC9384F4BAf433fA67D4e7aFf2781D18249";
-export const USER_PROFILE_ADDRESS = "0x7E2E1fB53579987FAd3d8cd1a2fD997cC507C583";
+export const GYM_COIN_ADDRESS     = "0x48D5ACe97Cc78AC3AF721e662B81C5B3A25ad9d8";
+export const USER_PROFILE_ADDRESS = "0xCDf651b1B127c9d8468797B58C62e3eA8Ca9e44c";
 export const SEPOLIA_CHAIN_ID     = "0xaa36a7";
 export const SEPOLIA_EXPLORER     = "https://sepolia.etherscan.io";
 
