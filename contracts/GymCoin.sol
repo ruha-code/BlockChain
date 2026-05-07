@@ -74,7 +74,7 @@ contract GymCoin is ERC20, AccessControl, Pausable, ReentrancyGuard {
         require(gcAmount <= maxBuyAmount, "Exceeds max buy amount");
 
         uint256 gcWei       = gcAmount * 10 ** decimals();
-        uint256 requiredEth = (gcAmount * sellRate) / (10 ** decimals());
+        uint256 requiredEth = gcAmount * sellRate;
 
         require(msg.value >= requiredEth,         "Insufficient ETH sent");
         require(balanceOf(adminAddress) >= gcWei, "Owner has insufficient tokens");
@@ -96,7 +96,7 @@ contract GymCoin is ERC20, AccessControl, Pausable, ReentrancyGuard {
         require(gcAmount <= maxSellAmount, "Exceeds max sell amount");
 
         uint256 gcWei     = gcAmount * 10 ** decimals();
-        uint256 ethAmount = (gcAmount * buyRate) / (10 ** decimals());
+        uint256 ethAmount = gcAmount * buyRate;
 
         require(balanceOf(msg.sender) >= gcWei,     "Insufficient token balance");
         require(address(this).balance >= ethAmount, "Contract has insufficient ETH");

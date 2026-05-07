@@ -364,7 +364,7 @@ export function useWallet() {
       const gcInt = BigInt(Math.floor(Number(amount)));
       if (gcInt <= 0n) throw new Error("Amount must be greater than 0");
       const sellRateWei = await gymCoin.sellRate();
-      const ethNeeded = (gcInt * sellRateWei) / (10n ** 18n);
+      const ethNeeded = gcInt * sellRateWei;
       setModal({ type: "loading", action: "buy", amount });
       const tx = await gymCoin.buy(gcInt, { value: ethNeeded });
       await tx.wait();

@@ -9,16 +9,17 @@ const STEPS = [
   "Click Sell and confirm in MetaMask",
 ];
 
-export default function SellTab({ rates, balance, ethBalance, onSell, loading }) {
+export default function SellTab({ rates, balance, ethBalance, limits, onSell, loading }) {
   const [amount, setAmount]   = useState("");
   const [selected, setSelected] = useState(null);
 
-  const maxGc      = Math.floor(parseFloat(balance));
-  const gcInt      = Math.max(0, Math.floor(Number(amount) || 0));
-  const ethReceive = gcInt > 0 ? gcInt * parseFloat(rates.buy) : 0;
-  const fee        = 0.0001;
-  const netReceive = Math.max(0, ethReceive - fee);
-  const overMax    = gcInt > maxGc && gcInt > 0;
+  const maxGc        = Math.floor(parseFloat(balance));
+  const gcInt        = Math.max(0, Math.floor(Number(amount) || 0));
+  const ethReceive   = gcInt > 0 ? gcInt * parseFloat(rates.buy) : 0;
+  const fee          = 0.0001;
+  const netReceive   = Math.max(0, ethReceive - fee);
+  const overMax      = gcInt > maxGc && gcInt > 0;
+  const exceedsLimit = gcInt > parseInt(limits?.maxSell || 0) && gcInt > 0;
 
   const pick = (n) => { setAmount(n.toString()); setSelected(n); };
   const handleChange = (e) => { setAmount(e.target.value); setSelected(null); };
@@ -89,6 +90,14 @@ export default function SellTab({ rates, balance, ethBalance, onSell, loading })
                     <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                   </svg>
                   Exceeds available balance ({maxGc.toLocaleString()} GC)
+                </p>
+              )}
+              {exceedsLimit && !overMax && (
+                <p className="flex items-center gap-1.5 text-xs text-amber-600 font-medium mt-1.5">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                  Exceeds max sell limit ({limits?.maxSell} GC per transaction)
                 </p>
               )}
 
@@ -188,8 +197,8 @@ export default function SellTab({ rates, balance, ethBalance, onSell, loading })
           {/* CTA */}
           <div className="px-6 py-5 space-y-3">
             <PrimaryButton
-              onClick={() => !overMax && gcInt > 0 && onSell(gcInt.toString())}
-              disabled={gcInt <= 0 || overMax}
+              onClick={() => !overMax && !exceedsLimit && gcInt > 0 && onSell(gcInt.toString())}
+              disabled={gcInt <= 0 || overMax || exceedsLimit}
               loading={loading}
               color="red"
             >
