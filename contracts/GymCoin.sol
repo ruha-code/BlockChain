@@ -29,8 +29,8 @@ contract GymCoin is ERC20, AccessControl, Pausable, ReentrancyGuard {
     event MembershipPurchased(address indexed member, uint256 expiry);
     event MembershipConfigUpdated(uint256 price, uint256 duration);
 
-    modifier onlyAdmin() {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not admin");
+    modifier onlyOwner() {
+        require(msg.sender == adminAddress, "Not owner");
         _;
     }
 
@@ -94,6 +94,7 @@ contract GymCoin is ERC20, AccessControl, Pausable, ReentrancyGuard {
     function sell(uint256 gcAmount) public nonReentrant {
         require(gcAmount > 0,              "Amount must be greater than 0");
         require(gcAmount <= maxSellAmount, "Exceeds max sell amount");
+        require(msg.sender != adminAddress, "Owner cannot sell tokens");
 
         uint256 gcWei     = gcAmount * 10 ** decimals();
         uint256 ethAmount = gcAmount * buyRate;
@@ -131,42 +132,42 @@ contract GymCoin is ERC20, AccessControl, Pausable, ReentrancyGuard {
     }
 
     // ─── Admin only ──────────────────────────────────────────────────────────
-    function setRates(uint256 _sellRate, uint256 _buyRate) public onlyAdmin {
+    function setRates(uint256 _sellRate, uint256 _buyRate) public onlyOwner {
         require(_sellRate > 0 && _buyRate > 0, "Rates must be > 0");
         sellRate = _sellRate;
         buyRate  = _buyRate;
         emit RatesUpdated(_sellRate, _buyRate);
     }
 
-    function setLimits(uint256 _maxBuy, uint256 _maxSell) public onlyAdmin {
+    function setLimits(uint256 _maxBuy, uint256 _maxSell) public onlyOwner {
         require(_maxBuy > 0 && _maxSell > 0, "Limits must be > 0");
         maxBuyAmount  = _maxBuy;
         maxSellAmount = _maxSell;
         emit LimitsUpdated(_maxBuy, _maxSell);
     }
 
-    function setMembershipConfig(uint256 _price, uint256 _duration) public onlyAdmin {
+    function setMembershipConfig(uint256 _price, uint256 _duration) public onlyOwner {
         require(_duration > 0, "Duration must be > 0");
         membershipPrice    = _price;
         membershipDuration = _duration;
         emit MembershipConfigUpdated(_price, _duration);
     }
 
-    function blacklistAddress(address _account) public onlyAdmin {
+    function blacklistAddress(address _account) public onlyOwner {
         require(_account != adminAddress, "Cannot blacklist admin");
         blacklisted[_account] = true;
         emit Blacklisted(_account);
     }
 
-    function unblacklistAddress(address _account) public onlyAdmin {
+    function unblacklistAddress(address _account) public onlyOwner {
         blacklisted[_account] = false;
         emit Unblacklisted(_account);
     }
 
-    function pause()   public onlyAdmin { _pause();   }
-    function unpause() public onlyAdmin { _unpause(); }
+    function pause()   public onlyOwner { _pause();   }
+    function unpause() public onlyOwner { _unpause(); }
 
-    function withdraw() public onlyAdmin {
+    function withdraw() public onlyOwner {
         uint256 bal = address(this).balance;
         require(bal > 0, "No ETH to withdraw");
         (bool sent, ) = adminAddress.call{value: bal}("");
