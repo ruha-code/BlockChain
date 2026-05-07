@@ -1,32 +1,43 @@
-# Gym Coin — Blockchain Token System
+# Final Project 1 - Gym Credit Token System
 
-A gym credit system built on Ethereum Sepolia with a React frontend and Solidity smart contracts.
+This project implements a gym credit platform on Ethereum Sepolia using two smart contracts and a React frontend.
 
 Users can:
-- register an on-chain profile
+- connect with MetaMask
+- register a profile with `username`, `email`, and wallet address
+- view their profile and `GC` balance
 - buy `Gym Coin (GC)` with `ETH`
-- sell `GC` back to the contract for `ETH`
-- transfer `GC` to other users
-- activate a membership using `GC`
+- sell `GC` back for `ETH`
+- transfer `GC` to another wallet
+- disconnect their wallet
 
-The project also includes an owner panel for rates, limits, liquidity, blacklist, and pause controls.
+The system is based on an ERC-20 token and is designed to keep credit transfers transparent and tamper-resistant.
 
-## Features
+## Current Status
 
-- MetaMask connect and network switch to Sepolia
-- On-chain user profile with `username`, `email`, and wallet `address`
-- ERC-20 token flows: `buy`, `sell`, `transfer`
-- Membership purchase in `GC`
-- Owner-only admin actions
-- Transaction history, leaderboard, and market view in the frontend
-- Local `Hardhat` development mode with high-balance test accounts
+Checked on May 7, 2026:
 
-## Tech Stack
+- frontend build works
+- frontend lint works
+- live deployment URL provided by the project owner: [block-chain-nu-one.vercel.app](https://block-chain-nu-one.vercel.app/)
 
-- Frontend: React 19, Vite, ethers.js v6
-- Contracts: Solidity 0.8.20, OpenZeppelin v5
-- Dev tooling: Hardhat
-- Public testnet: Sepolia
+Current local verification result:
+
+- `npm run build` in `frontend/`: passed
+- `npm run lint` in `frontend/`: passed
+
+Important:
+- this means the frontend is buildable right now
+- the contract layer is not fully verified locally right now
+- from this environment, direct HTTP access to the live Vercel deployment could not be confirmed because the connection was refused during the check
+
+## Stack
+
+- Smart contracts: Solidity `0.8.20`
+- Framework: Hardhat
+- Token library: OpenZeppelin ERC-20
+- Frontend: React + Vite + ethers.js
+- Network: Sepolia
 
 ## Project Structure
 
@@ -37,35 +48,23 @@ BlockChain/
 │   └── UserProfile.sol
 ├── scripts/
 │   └── deploy.js
-├── test/
-│   └── GymCoin.test.js
 ├── frontend/
 │   ├── src/
 │   ├── public/
-│   ├── .env.local.example
-│   └── package.json
+│   ├── package.json
+│   └── .env.local.example
 ├── hardhat.config.js
 ├── package.json
 └── .env.example
 ```
 
-## Live Demo
-
-- Production: [https://block-chain-nu-one.vercel.app/](https://block-chain-nu-one.vercel.app/)
-- Network: Sepolia
-
-Current production contract addresses:
-
-- `GymCoin`: [`0x833a676dD16D8f5FA5F696ff1DC41ea9Bd3EB425`](https://sepolia.etherscan.io/address/0x833a676dD16D8f5FA5F696ff1DC41ea9Bd3EB425)
-- `UserProfile`: [`0xAB2C9BDB09a4692eC9a2B00AD2a4C160F763ADc9`](https://sepolia.etherscan.io/address/0xAB2C9BDB09a4692eC9a2B00AD2a4C160F763ADc9)
-
 ## Smart Contracts
 
 ### `UserProfile.sol`
 
-Stores a simple user profile per wallet address.
+Stores one profile per wallet address.
 
-Key functions:
+Main functions:
 
 ```solidity
 registerUser(string username, string email)
@@ -74,86 +73,93 @@ getUserInfo(address account) returns (string, string, address)
 isRegistered(address account) returns (bool)
 ```
 
-Validation rules:
-
-- username length must be `1-32`
-- email length must be `1-64`
-- a wallet can only register once, then update its profile later
+Current behavior:
+- registration is tied to `msg.sender`
+- one wallet can register only once
+- username must be `2-32` characters
+- email must be `1-64` characters
 
 ### `GymCoin.sol`
 
-Custom ERC-20 token contract for gym credits.
+Implements the `Gym Coin (GC)` ERC-20 token.
 
-Important behavior:
-
-- users buy `GC` from the owner's balance
-- users sell `GC` back for `ETH`
-- the contract must hold enough `ETH` liquidity to pay sellers
-- owner-only functions are restricted to `adminAddress`
-- the owner cannot exploit `sell()` to withdraw `ETH` without losing tokens
-
-Key functions:
+Main functions:
 
 ```solidity
 buy(uint256 gcAmount) payable
 sell(uint256 gcAmount)
 transfer(address to, uint256 amount)
-buyMembership()
 setRates(uint256 sellRate, uint256 buyRate)
 setLimits(uint256 maxBuy, uint256 maxSell)
-setMembershipConfig(uint256 price, uint256 duration)
-blacklistAddress(address account)
-unblacklistAddress(address account)
-pause()
-unpause()
 withdraw()
 ```
 
-## Current Default Token Config
+Current behavior:
+- total initial supply is minted to the contract owner
+- users buy tokens from the owner's balance
+- users sell tokens back and receive ETH from the contract
+- the contract must hold enough ETH for sell operations
+- only the owner can update rates, limits, or withdraw ETH
 
-These values come from [scripts/deploy.js](C:/Users/ruha/BlockChain/scripts/deploy.js):
+## Default Deployment Values
+
+These values come from [scripts/deploy.js](/C:/Users/ruha/BlockChain/scripts/deploy.js):
 
 | Parameter | Value |
 |---|---|
 | Initial supply | `1,000,000 GC` |
-| User pays buy rate | `0.0001 ETH / GC` |
-| User receives sell rate | `0.00005 ETH / GC` |
-| Max buy | `10,000 GC` |
-| Max sell | `5,000 GC` |
-| Membership price | `500 GC` |
-| Membership duration | `30 days` |
+| Sell rate | `0.0001 ETH` per `1 GC` |
+| Buy rate | `0.00005 ETH` per `1 GC` |
+| Max buy amount | `10,000 GC` |
+| Max sell amount | `5,000 GC` |
 
-Notes:
+Rate meaning in the current contract:
+- `sellRate`: price a user pays in ETH to buy `GC`
+- `buyRate`: ETH a user receives when selling `GC` back
 
-- In the code, `sellRate` means the rate used when a user buys `GC`
-- In the code, `buyRate` means the rate used when a user sells `GC`
+## Frontend Features
 
-## Security / Rules
+The frontend currently includes:
+- MetaMask connect and network switch
+- profile registration
+- profile view with username, email, address, and balances
+- buy `GC`
+- sell `GC`
+- transfer `GC`
+- owner tools for updating rates, updating limits, funding the contract, and withdrawing ETH
+- transaction history and additional dashboard views
 
-- users cannot buy `0`
-- users cannot sell `0`
-- users cannot buy above `maxBuyAmount`
-- users cannot sell above `maxSellAmount`
-- users cannot sell more `GC` than they own
-- users cannot sell if the contract has insufficient `ETH`
-- users cannot buy if the owner has insufficient `GC`
-- only the owner can update rates, limits, membership config, blacklist, pause, or withdraw
-- blacklisted addresses cannot send or receive tokens
-- paused state blocks token movement
+## Sepolia Contracts Used by the Frontend
 
-## Local Development
+The current frontend constants point to:
+
+- `GymCoin`: `0x39d2035722ea88e5547076B6FCd83ce8f517d050`
+- `UserProfile`: `0xa8a12f46E237F227A35f6DE65dd2d9dB5eEaFB10`
+
+Live frontend deployment:
+
+- [https://block-chain-nu-one.vercel.app/](https://block-chain-nu-one.vercel.app/)
+
+If you deploy new contracts, update the frontend configuration before rebuilding or running the app.
+
+## Setup
 
 ### 1. Install dependencies
 
-From the project root:
+At the project root:
 
 ```bash
 npm install
+```
+
+For the frontend:
+
+```bash
 cd frontend
 npm install
 ```
 
-### 2. Configure Sepolia deploy credentials
+### 2. Configure environment variables
 
 Create `.env` in the project root:
 
@@ -162,152 +168,50 @@ SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY
 PRIVATE_KEY=your_private_key_without_0x
 ```
 
-### 3. Run tests
-
-From the root:
+### 3. Compile contracts
 
 ```bash
-npm test
+npm run compile
 ```
 
-### 4. Start the frontend only
-
-If you want to use the already deployed Sepolia contracts:
-
-```bash
-cd frontend
-npm run dev
-```
-
-Open `http://localhost:5173`.
-
-## Local Hardhat Mode
-
-This project also supports local development with a local chain and large test balances.
-
-### 1. Start a local Hardhat node
-
-From the root:
-
-```bash
-npm run node
-```
-
-This gives you local dev accounts with very large test `ETH` balances.
-
-### 2. Deploy contracts to localhost
-
-In another terminal:
-
-```bash
-npm run deploy:local
-```
-
-The script prints addresses like:
-
-```env
-VITE_NETWORK=localhost
-VITE_GYM_COIN_ADDRESS=0x...
-VITE_USER_PROFILE_ADDRESS=0x...
-```
-
-### 3. Configure the frontend for localhost
-
-Create `frontend/.env.local` from the example:
-
-```bash
-cd frontend
-copy .env.local.example .env.local
-```
-
-Then fill in the deployed local addresses.
-
-Example:
-
-```env
-VITE_NETWORK=localhost
-VITE_GYM_COIN_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
-VITE_USER_PROFILE_ADDRESS=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
-```
-
-### 4. Run the frontend
-
-```bash
-cd frontend
-npm run dev
-```
-
-Then connect MetaMask to `Localhost 8545`.
-
-Important:
-
-- if you restart the local Hardhat node, contract addresses reset
-- after a node reset, run `npm run deploy:local` again and update `frontend/.env.local`
-
-## Sepolia Deployment
-
-Deploy contracts to Sepolia from the root:
+### 4. Deploy to Sepolia
 
 ```bash
 npm run deploy
 ```
 
-Then update the frontend addresses in [frontend/src/constants.js](C:/Users/ruha/BlockChain/frontend/src/constants.js) or in your deployment environment before rebuilding.
-
-Build the frontend:
+### 5. Run the frontend
 
 ```bash
 cd frontend
-npm run build
+npm run dev
 ```
 
-## Frontend Capabilities
+Then open `http://localhost:5173`.
 
-The frontend includes:
+## Important Notes
 
-- wallet connect / disconnect
-- user registration and profile editing
-- `GC` balance and `ETH` balance display
-- buy / sell / transfer flows
-- membership purchase
-- owner panel for rates, limits, blacklist, pause, funding, and withdrawal
-- transaction history and leaderboard
+- Users need Sepolia ETH for gas fees.
+- Selling only works if the contract has enough ETH liquidity.
+- Buying only works if the owner still holds enough GC tokens.
+- Automated tests were removed from this repository.
 
-## Known Practical Constraints
+## Security Rules Implemented in the Current Contract
 
-- selling requires the contract to have enough `ETH` liquidity
-- public production runs on Sepolia, so users still need Sepolia test `ETH` for gas
-- local `Hardhat` mode is better for stress-testing and large-balance demos
+- users cannot buy `0` tokens
+- users cannot sell `0` tokens
+- users cannot buy above `maxBuyAmount`
+- users cannot sell above `maxSellAmount`
+- users cannot sell more GC than they own
+- users cannot sell if the contract lacks ETH
+- users cannot buy if the owner lacks tokens
+- only the owner can call admin functions
 
-## Troubleshooting
+## Known Gaps
 
-**MetaMask not detected**
-
-- Install and enable MetaMask in your browser
-
-**Wrong network**
-
-- The app should prompt a network switch to Sepolia or localhost, depending on mode
-
-**Insufficient ETH for gas**
-
-- On Sepolia, get faucet ETH
-- On localhost, import a Hardhat dev account into MetaMask
-
-**Contract has insufficient ETH**
-
-- Fund the contract first so users can sell `GC`
-
-**Frontend shows old contract data**
-
-- Rebuild after changing addresses
-- If using localhost, verify `frontend/.env.local`
-
-**Local chain stopped working**
-
-- Restart `npm run node`
-- Redeploy with `npm run deploy:local`
-- Refresh `frontend/.env.local`
+Relative to the assignment brief, the current repository still has a few things to review further:
+- the frontend contains extra dashboard/admin screens beyond the minimum assignment scope
+- contract addresses are currently managed directly in [frontend/src/constants.js](/C:/Users/ruha/BlockChain/frontend/src/constants.js)
 
 ## License
 
