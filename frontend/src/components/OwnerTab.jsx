@@ -228,13 +228,16 @@ export default function OwnerTab({
           />
         </div>
         <button
-          onClick={() => parseFloat(fundAmt) > 0 && onFund(fundAmt)}
-          disabled={loading === "fund" || !(parseFloat(fundAmt) > 0)}
-          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-sm hover:-translate-y-px active:translate-y-0"
+          onClick={() => {
+            const amt = parseFloat(fundAmt);
+            if (amt > 0) onFund(fundAmt);
+          }}
+          disabled={!(parseFloat(fundAmt) > 0) || loading === "fund"}
+          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-sm hover:-translate-y-px active:translate-y-0 cursor-pointer"
         >
           {loading === "fund" ? <><Spinner /> Sending...</> : "💧 Fund Contract"}
         </button>
-        <p className="text-xs text-gray-400 mt-3">ETH отправится в контракт через MetaMask. Пользователи смогут продавать GC после этого.</p>
+        <p className="text-xs text-gray-400 mt-3">ETH will be sent to the contract via MetaMask. Users will be able to sell GC after this.</p>
       </Section>
 
       {/* ── WITHDRAW ── */}

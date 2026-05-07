@@ -494,10 +494,9 @@ export function useWallet() {
   const fundContract = async (ethAmount) => {
     try {
       setLoadingAction("fund");
-      const signer = await provider.getSigner();
-      const tx = await signer.sendTransaction({
+      const tx = await gymCoin.runner.sendTransaction({
         to: GYM_COIN_ADDRESS,
-        value: ethers.parseEther(ethAmount),
+        value: ethers.parseEther(String(ethAmount)),
       });
       await tx.wait();
       await refreshBalance(gymCoin, account, provider);
