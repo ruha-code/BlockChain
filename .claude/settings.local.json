@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(ls /mnt/c/Users/ruha/BlockChain/frontend/ 2>/dev/null || echo \"not found\")"
-    ]
-  }
-}
