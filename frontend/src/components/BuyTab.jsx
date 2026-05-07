@@ -38,10 +38,15 @@ export default function BuyTab({ rates, balance, ethBalance, limits, onBuy, load
   const [amount, setAmount] = useState("");
   const [selected, setSelected] = useState(null);
 
-  const gcInt   = Math.max(0, Math.floor(Number(amount) || 0));
-  const ethCost = gcInt > 0 ? gcInt * parseFloat(rates.sell) : 0;
-  const fee     = 0.0001;
-  const total   = ethCost + fee;
+  const gcInt        = Math.max(0, Math.floor(Number(amount) || 0));
+  const ethCost      = gcInt > 0 ? gcInt * parseFloat(rates.sell) : 0;
+  const fee          = 0.0001;
+  const total        = ethCost + fee;
+  const ethBal       = parseFloat(ethBalance || 0);
+  const maxAffordable = parseFloat(rates.sell) > 0 ? Math.floor((ethBal - fee) / parseFloat(rates.sell)) : 0;
+  const notEnoughEth  = gcInt > 0 && total > ethBal;
+  const exceedsLimit  = gcInt > parseInt(limits?.maxBuy || 0);
+  const canBuy        = gcInt > 0 && !notEnoughEth && !exceedsLimit;
 
   const pick = (n) => {
     setAmount(n.toString());
@@ -153,6 +158,33 @@ export default function BuyTab({ rates, balance, ethBalance, limits, onBuy, load
               </div>
             </div>
 
+            {/* Insufficient ETH warning */}
+            {notEnoughEth && (
+              <div className="flex items-start gap-2.5 p-3 bg-red-50 border border-red-100 rounded-xl">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <p className="text-xs text-red-600 font-medium">
+                  Insufficient ETH. You need <span className="font-bold">{total.toFixed(4)} ETH</span> but have <span className="font-bold">{ethBal.toFixed(4)} ETH</span>.
+                  {maxAffordable > 0
+                    ? <> You can buy up to <span className="font-bold">{maxAffordable} GC</span>.</>
+                    : <> Top up your wallet with Sepolia ETH from a faucet.</>}
+                </p>
+              </div>
+            )}
+
+            {/* Exceeds limit warning */}
+            {exceedsLimit && !notEnoughEth && (
+              <div className="flex items-start gap-2.5 p-3 bg-amber-50 border border-amber-100 rounded-xl">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <p className="text-xs text-amber-700 font-medium">
+                  Exceeds max limit of <span className="font-bold">{limits?.maxBuy} GC</span> per transaction.
+                </p>
+              </div>
+            )}
+
             {/* Exchange Rate pill */}
             <div className="flex items-center justify-between px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-xl">
               <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700">
@@ -198,15 +230,15 @@ export default function BuyTab({ rates, balance, ethBalance, limits, onBuy, load
           {/* CTA */}
           <div className="px-6 py-5 space-y-3">
             <PrimaryButton
-              onClick={() => gcInt > 0 && onBuy(gcInt.toString())}
-              disabled={gcInt <= 0}
+              onClick={() => canBuy && onBuy(gcInt.toString())}
+              disabled={!canBuy}
               loading={loading}
               color="emerald"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 5v14M5 12l7 7 7-7" />
               </svg>
-              Buy GC
+              {notEnoughEth ? "Insufficient ETH" : exceedsLimit ? "Exceeds Limit" : "Buy GC"}
             </PrimaryButton>
             <div className="flex items-center justify-center gap-1.5">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
